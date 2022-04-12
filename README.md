@@ -6,4 +6,4 @@
 <!-- badges: start -->
 <!-- badges: end -->
 
-Course materials will come here. Right?
+Course materials will come here.
