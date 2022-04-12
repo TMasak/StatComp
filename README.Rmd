@@ -19,3 +19,5 @@ knitr::opts_chunk$set(
 <!-- badges: end -->
 
 Course materials will come here.
+
+Line added directly in GitHub.
