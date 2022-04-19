@@ -9,3 +9,5 @@
 Course materials will come here.
 
 Line added directly in GitHub.
+
+Another one added locally and pushed to GitHub.
