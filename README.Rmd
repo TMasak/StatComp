@@ -1,5 +1,7 @@
 ---
-output: github_document
+output:   
+  github_document:
+    pandoc_args: --webtex=https://ibm.codecogs.com/png.latex?
 ---
 
 <!-- README.md is generated from README.Rmd. Please edit that file -->
@@ -19,6 +21,10 @@ knitr::opts_chunk$set(
 <!-- badges: end -->
 
 Course materials will come here.
+
+\[
+X_1 \otimes \mathcal{N}
+\]
 
 Line added directly in GitHub.
 

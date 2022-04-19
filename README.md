@@ -8,6 +8,12 @@
 
 Course materials will come here.
 
+![
+X\_1 \\otimes \\mathcal{N}
+](https://latex.codecogs.com/png.image?%5Cdpi%7B110%7D&space;%5Cbg_white&space;%0AX_1%20%5Cotimes%20%5Cmathcal%7BN%7D%0A "
+X_1 \otimes \mathcal{N}
+")
+
 Line added directly in GitHub.
 
 Another one added locally and pushed to GitHub.
