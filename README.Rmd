@@ -1,7 +1,5 @@
 ---
-output:   
-  github_document:
-    pandoc_args: --webtex=https://ibm.codecogs.com/png.latex?
+output: github_document
 ---
 
 <!-- README.md is generated from README.Rmd. Please edit that file -->
