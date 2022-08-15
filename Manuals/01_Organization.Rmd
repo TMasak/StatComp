@@ -9,7 +9,9 @@ output:
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-Please note that the [coursebook entry](https://edu.epfl.ch/coursebook/en/statistical-computation-and-visualisation-MATH-517) for this course is slightly outdated, and the purpose of this sheet is to provide an up-to-date information about the organization of the course.
+The [coursebook entry](https://edu.epfl.ch/coursebook/en/statistical-computation-and-visualisation-MATH-517) for this course is slightly outdated, and the purpose of this sheet is to provide an up-to-date information about the organization of the course.
+
+The most important point is that the course will be hosted on GitHub, specifically in [this repo](https://github.com/TMasak/StatComp). You will need to work with GitHub also to submit your assignments. Moodle will only be used to communicate the points received back to you.
 
 # 1. Course Content
 
@@ -110,7 +112,7 @@ You will soon learn how to download the up-to-date materials via RStudio, which 
 
 # 4. Handing-in Assignments and Projects
 
-Almost everything will be done in GitHub. After completing the assignment from Week 1 (i.e. following [this manual](02_Github.html)), you should have
+Almost everything will be done in GitHub. After completing the assignment from Week 1 (i.e. following [this manual](02_Github.html)), you should
 
 * have installed the following software:
     - R
@@ -129,7 +131,7 @@ Now, in order to obtain points for your assignment, simply do the following:
     - when you have something new, push it to GitHub
          - always push to GitHub when you are stopping your current streak of work, e.g. at the end of an exercise session
 * until the assignment is solved
-* make sure in your browser that the `.html` file hosted on GitHub looks like you want, and `ctrl+c` the link
+* make sure in your browser that the `.html` file hosted on GitHub looks like you want by opening the file in your browser from GitHub. Instead of a rendered html, you will only see code. After inserting `https://htmlpreview.github.io/?` right in front of the link, a rendered pdf will appear. Finally, `ctrl+c` the link (including the prefix used to render the html).
 * go to the respective assignment in Moodle
 * `ctrl+v` the link, and make it clickable by selecting the copy-pasted link (`ctrl+a`) and linking it by `ctrl+k` and `ctrl+v` the link again
 * click submit in Moodle
@@ -143,9 +145,9 @@ The workflow above is for assignments only, since the projects require one more 
 * now, each group member can
     - pull from the shared repo when starting to work on the project
     - push to the shared repo at the end of his work streak
-* naturally, problems arise when multiple people work on the project at the same time, but our goal is not to teach you some remote development like this, rather communicate with your group mates work together whenever possible.
+* naturally, problems arise when multiple people work on the project at the same time, but our goal is not to teach you remote development tools like this; instead, communicate with your group mates and work together whenever possible.
 
-When the project is done, every group member pushes it to their "StatComp-[Sciper]" repo submits the link to Moodle as with assignments. In case of a group of size 3, submit right under your link the distribution of work like described [above](#groups).
+When the project is done and hosted in the "StatComp-[Sciper]", every group member submits the link to Moodle as with assignments. In case of a group of size 3, submit right under your link the distribution of work like described [above](#groups).
     
 
 
