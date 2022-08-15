@@ -7,4 +7,5 @@
 <!-- badges: end -->
 
 All course materials will come here, in this repo. Please check [the
-course organization document](/Manuals/01_Organization.html)
+course organization
+document](https://htmlpreview.github.io/?https://github.com/TMasak/StatComp/blob/master/Manuals/01_Organization.html)
