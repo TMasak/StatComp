@@ -18,12 +18,4 @@ knitr::opts_chunk$set(
 <!-- badges: start -->
 <!-- badges: end -->
 
-Course materials will come here.
-
-\[
-X_1 \otimes \mathcal{N}
-\]
-
-Line added directly in GitHub.
-
-Another one added locally and pushed to GitHub.
+All course materials will come here, in this repo. Please check [the course organization document](/Manuals/01_Organization.html)

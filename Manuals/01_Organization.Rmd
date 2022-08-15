@@ -1,0 +1,155 @@
+---
+title: "Course Organization"
+output:
+  html_document:
+    toc: true
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+Please note that the [coursebook entry](https://edu.epfl.ch/coursebook/en/statistical-computation-and-visualisation-MATH-517) for this course is slightly outdated, and the purpose of this sheet is to provide an up-to-date information about the organization of the course.
+
+# 1. Course Content
+
+The plan is to cover the following topics:
+
+* Week 1: Introduction & Software
+* Week 2: Ethics & Reproducibility
+* Week 3: Data Exploration & Graphics
+* Week 4: Kernel Density Estimation
+* Week 5: Local Polynomial Regression
+* Week 6: Cross-validation
+* Week 7: EM Algorithm
+* Week 8: EM Algorithm
+* Week 9: Monte Carlo
+* Week 10: Bootstrap
+* Week 11: Bootstrap
+* Week 12: Bayesian Computations
+* Week 13: Bayesian Computations
+* Week 14: $\emptyset$
+
+Since our lectures are on Friday morning, 10:15-12 am, and exercises on Friday afternoon, 13:15-15 pm, the last week of the semester falls on December 23. Hence this week is going to be cancelled, and the extra time can be used to work on the final projects. In case of interest, we can also have consultation hours on Zoom on December 23 or some other time during the last week.
+
+As far as the lecture topics go, the first 3 weeks will be less mathematical, Weeks 4-11 will be somehow more classical, and Weeks 12-13 will be somehow synoptic. The focus of this course is on methods and algorithms, *not* on inference and theory, hence we will rarely, if ever, prove theorems. We may however do blackboard calculations from time to time.
+
+Apart from the topics mentioned above, mastering this course requires scripting (simulation studies and data exploration & visualization tasks) in **R** and **Markdown**, as well as sharing your code via **GitHub**. You will be required to do a small project a final project, and various tiny assignments fostering these skills. **Exercise classes should be attended** and used to pick up the required skills, and work on these projects and assignments!  
+
+# 2. Evaluation
+
+The assessment method for this course is "controle continue", meaning that the course and all the work required from the students effectively ends before Christmas, and final grades will be given during the first two weeks in January. This also means that the **work needed to pass this course starts immediately on Week 1**.
+
+The final grade will consist of
+
+* handing in assignments -- 40 % of the grade, handed-in individually
+    - probably 8 assignments in total, each for 5 % of the grade
+    - collaboration during the exercise classes is encouraged, but avoid copies
+* small project -- 20 % of the grade, handed-in in groups of 2-3 students, and
+* final project -- 40 % of the grade, handed-in in groups of 2-3.
+
+**Grading** will be done on a rough scale. For example the assignments will be mostly graded on a binary basis, you either receive full 5 % or nothing. Similarly the projects will be graded in 5 % increments. Notice that 5 % corresponds to 0.25 increment on the 1-6 scale used at EPFL. As a result, skipping an assignment will irrevocably reduce your final grade. On the other hand, the assignments will be short and simple, and serious attempts to solve them should resolve in the full mark. Similarly for the projects, with one exception: 10 % of the final project will be awarded for value added (original data analysis, simulation study answering a previously unclear question, etc.).
+
+**Deadlines** will always be set at the end of the week (the midnight between Sunday and Monday), hence e.g. "deadline on Week 2" simply means the assignment can be handed-in by 23:59 on October 2. An assignment from Week $k$ (given at the end of slides to the $k$-th lecture) will always have their deadline on Week $k+1$ (i.e. the midnight between Sunday and Monday following the $(k+1)$-th lecture). We will be pedantic about setting up the deadlines, not about forcing them. However, accepting a late submission will be done solely at teachers' discretion, following a personal (face-to-face) conversation during the exercises (again, **the exercises should be attended**).
+
+## 2.1 Small Project
+
+Work can start after the second lecture, deadline on Week 6.
+
+The goal of this project is *data exploration*. Find an interesting (in the sense it interests you!) data set and
+
+* explore the data
+* describe the data
+* visualize the data
+* lay out some questions about the data based on your exploration
+* use more detailed visualization techniques to conjecture answers to those questions
+
+The first step should be done individually. Then you can form groups and pick up the most interesting data set and perform the subsequent steps. If you realize you have chosen too simple data set (or one that you don't like), you don't need to scrap your work. Instead, simply move to a different data set and have your project composed of multiple data sets.
+
+Note that the purpose of this project is to play around, demonstrating your data exploration, wrangling and visualization skills. Hopefully, you will also find scientifically interesting questions or questions of personal interest (e.g. does ball possession matter in a game of football?), but even if not, you can still be awarded full points, as long as you avoid Kaggle data sets that has been analyzed zillion times before. In that case you do end up with such a data set for any reason, try to avoid reading old solutions, and rather focus on utilizing techniques from this course in your own original way and to the best of your abilities.
+
+**Groups** can be of size of either 2 or 3 people. The size will *not* matter w.r.t. to grading. However, a group of size 3 will have one additional task to do: as part of their Moodle submission, every team member will individually include a short paragraph describing contributions of every individual member of the team. This is not to be discussed among the team members, as it serves as a safeguard. Regardless of their individual contributions, each member of the team will receive the same grade, apart from where this would be extremely unfair. Such cases will be discussed personally. In case of any team-work problems, the students are encouraged to seek advice (mostly as a group) from the teachers (mostly during the exercise classes).
+
+## 2.2 Final Project
+
+Work can start following the $7$-th lecture, deadline on December 23, at 23:59. This is a soft deadline. I would suggest you finish the project before Christmas, however, *if all members of the team agree to this*, the project can be submitted by the end of the calendar year. In this case, make sure that one member of the team submits a deadline that you set for yourself (e.g. you can decide to submit on December 30) as a submission into the Moodle (to be replaced later by the real submission). This is recommended in order to prevent the holiday season ruined by a lazy member(s) of the team. Note that if a single member of your team wishes to submit on December 23, you are required to do so.
+
+The goal of this project is quite broad, students are free to come up with their own ideas. While simulation studies are the designated topic, groups that found interesting data during the small project and would like to carry on analyzing it, or groups interested to study a bit deeper one of the methodological concepts from this course are encouraged to approach the teachers during the exercises and discuss their ideas. Also, prospective topics for the final project will be gradually revealed during the lectures.
+
+A part of the grade for the final project (10 % of the total grade, i.e. one quarter of the final project) will be awarded for value added (original data analysis, simulation study answering a previously unclear question, etc.). All of the prospective topics that will be introduced during the lecture will have this element, and by half-way through the semester (when the final project will start) it should be clear through the examples what the project should aspire to. We will also discuss this in person at some point, likely on Week 7.
+
+<a name="groups"></a>
+**Groups** can be of size of either 2 or 3 people. The size will *not* matter w.r.t. to grading. However, a group of size 3 will have one additional task to do: as part of their Moodle submission, every team member will individually include a short paragraph describing contributions of every individual member of the team. This is not to be discussed among the team members, as it serves as a safeguard. Regardless of their individual contributions, each member of the team will receive the same grade, apart from where this would be extremely unfair. Such cases will be discussed personally. In case of any team-work problems, the students are encouraged to seek advice (mostly as a group) from the teachers (mostly during the exercise classes).
+
+## 2.3 Grade Calculation
+
+In the Moodle, your submissions will receive a grade on the 0-100 point scale (e.g. for the assignments, it will be mostly either 0 or 100). Let $a_1,\ldots,a_8$ denote points you receive from the assignments, $s$ be the small project points, and $p$ be the final project points. The final grade will be calculated as
+\[
+1 + \frac{0.25}{100}\sum_{j=1}^8 a_j + \frac{1}{100} s + \frac{2}{100} p
+\]
+which gives the best possible grade
+```{r}
+a <- rep(100,8)
+s <- p <- 100
+1 + 0.25/100*sum(a) + s/100 + 2*p/100
+```
+
+# 3. Materials
+
+All materials will be gradually made available on **GitHub**, specifically in [this repo](https://github.com/TMasak/StatComp). This includes
+
+* lecture slides,
+* lecture notes, and
+* manuals.
+
+During Week 1-3, lecture notes will cover only a portion of the slides, but from Week 4 slides will basically correspond to a presentable version of the lecture notes. The *manuals* form a supplementary material created to help you out with various aspects of the course (such as the purpose of this one called "Course Organization" is to tell you everything administration-related that you need to successfully pass the course).
+
+You will soon learn how to download the up-to-date materials via RStudio, which will allow us to gradually update everything and distribute it to you (the students) on the go. You will have access to all the source code as well, which you can use for example to create a printable version of these manuals (simply replace the `html_document` in the header by `pdf_document` and `Knit` it in RStudio). Learning basics of this is a part of the learning process asociated with this course.
+
+**Moodle** will only be used for its forum and to formally submit assignments (and projects) are receive back the grades (see the next section). There will be no Piazza or video recordings available for this course.
+
+# 4. Handing-in Assignments and Projects
+
+Almost everything will be done in GitHub. After completing the assignment from Week 1 (i.e. following [this manual](02_Github.html)), you should have
+
+* have installed the following software:
+    - R
+    - RStudio
+    - Git
+* have your personal GitHub account
+* a *public* repository in GitHub called "StatComp-[your SCIPER]" linked to an RStudio project on your local machine
+    - if you are unsure whether your repo is public, try whether you can access it using the private mode of your browser or ask a friend
+
+and be able to push and pull things between GitHub and your local machine.
+
+Now, in order to obtain points for your assignment, simply do the following:
+
+* repeat
+    - start working on your project in R Markdown
+    - when you have something new, push it to GitHub
+         - always push to GitHub when you are stopping your current streak of work, e.g. at the end of an exercise session
+* until the assignment is solved
+* make sure in your browser that the `.html` file hosted on GitHub looks like you want, and `ctrl+c` the link
+* go to the respective assignment in Moodle
+* `ctrl+v` the link, and make it clickable by selecting the copy-pasted link (`ctrl+a`) and linking it by `ctrl+k` and `ctrl+v` the link again
+* click submit in Moodle
+
+If on Mac, adjust the shortcuts accordingly.
+
+The workflow above is for assignments only, since the projects require one more ingredient: collaboration. That can either be done locally, synchronizing pushes to the respective repositories on GitHub (which we recommend for the small project), or by actually utilizing the collaborative features of GitHub by working in a single repo and using tools such as *branching*, *forking* and *pull requests* to move forward. For the final project, we would actually suggest something intermediate:
+
+* one student from a group creates a new *public* GitHub repo "SmallProj-[SCIPER]" or "FinalProj-[SCIPER]", respectively
+* the one student goes to the repo, into settings -> collaborators and adds the other group members, which gives them the right to push into the repo
+* now, each group member can
+    - pull from the shared repo when starting to work on the project
+    - push to the shared repo at the end of his work streak
+* naturally, problems arise when multiple people work on the project at the same time, but our goal is not to teach you some remote development like this, rather communicate with your group mates work together whenever possible.
+
+When the project is done, every group member pushes it to their "StatComp-[Sciper]" repo submits the link to Moodle as with assignments. In case of a group of size 3, submit right under your link the distribution of work like described [above](#groups).
+    
+
+
+
+
+
+
