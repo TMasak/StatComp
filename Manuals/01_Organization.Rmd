@@ -15,7 +15,7 @@ The most important point is that the course will be hosted on GitHub, specifical
 
 # 1. Course Content
 
-The plan is to cover the following topics:
+The plan for the lectures is the following:
 
 * Week 1: Introduction & Software
 * Week 2: Ethics & Reproducibility
@@ -34,9 +34,9 @@ The plan is to cover the following topics:
 
 Since our lectures are on Friday morning, 10:15-12 am, and exercises on Friday afternoon, 13:15-15 pm, the last week of the semester falls on December 23. Hence this week is going to be cancelled, and the extra time can be used to work on the final projects. In case of interest, we can also have consultation hours on Zoom on December 23 or some other time during the last week.
 
-As far as the lecture topics go, the first 3 weeks will be less mathematical, Weeks 4-11 will be somehow more classical, and Weeks 12-13 will be somehow synoptic. The focus of this course is on methods and algorithms, *not* on inference and theory, hence we will rarely, if ever, prove theorems. We may however do blackboard calculations from time to time.
+As far as the lecture topics go, the first 3 weeks will be less mathematical, while the remaining weeks will be somehow more classical. However, the focus of this course is on methods and algorithms, *not* on inference and theory, hence we will rarely, if ever, prove theorems. We may however do (blackboard) calculations from time to time.
 
-Apart from the topics mentioned above, mastering this course requires scripting (simulation studies and data exploration & visualization tasks) in **R** and **Markdown**, as well as sharing your code via **GitHub**. You will be required to do a small project a final project, and various tiny assignments fostering these skills. **Exercise classes should be attended** and used to pick up the required skills, and work on these projects and assignments!  
+Apart from the topics mentioned above, mastering this course requires scripting (simulation studies and data exploration & visualization tasks) in **R** and **Markdown**, as well as sharing your code via **GitHub**. You will be required to do a small project a final project, and various assignments fostering these skills. There will be no exercise sheets, suggestions for each week's exercise class will be given towards the end of each week's lecture slides. **Exercise classes should be attended** and used to pick up the required skills, and work on these projects and assignments!
 
 # 2. Evaluation
 
@@ -54,7 +54,11 @@ The final grade will consist of
 
 **Deadlines** will always be set at the end of the week (the midnight between Sunday and Monday), hence e.g. "deadline on Week 2" simply means the assignment can be handed-in by 23:59 on October 2. An assignment from Week $k$ (given at the end of slides to the $k$-th lecture) will always have their deadline on Week $k+1$ (i.e. the midnight between Sunday and Monday following the $(k+1)$-th lecture). We will be pedantic about setting up the deadlines, not about forcing them. However, accepting a late submission will be done solely at teachers' discretion, following a personal (face-to-face) conversation during the exercises (again, **the exercises should be attended**).
 
-## 2.1 Small Project
+## 2.1 Assignments
+
+There will be 8 assignments during the semester, graded as described above.
+
+## 2.2 Small Project
 
 Work can start after the second lecture, deadline on Week 6.
 
@@ -72,31 +76,43 @@ Note that the purpose of this project is to play around, demonstrating your data
 
 **Groups** can be of size of either 2 or 3 people. The size will *not* matter w.r.t. to grading. However, a group of size 3 will have one additional task to do: as part of their Moodle submission, every team member will individually include a short paragraph describing contributions of every individual member of the team. This is not to be discussed among the team members, as it serves as a safeguard. Regardless of their individual contributions, each member of the team will receive the same grade, apart from where this would be extremely unfair. Such cases will be discussed personally. In case of any team-work problems, the students are encouraged to seek advice (mostly as a group) from the teachers (mostly during the exercise classes).
 
-## 2.2 Final Project
+## 2.3 Final Project
 
 Work can start following the $7$-th lecture, deadline on December 23, at 23:59. This is a soft deadline. I would suggest you finish the project before Christmas, however, *if all members of the team agree to this*, the project can be submitted by the end of the calendar year. In this case, make sure that one member of the team submits a deadline that you set for yourself (e.g. you can decide to submit on December 30) as a submission into the Moodle (to be replaced later by the real submission). This is recommended in order to prevent the holiday season ruined by a lazy member(s) of the team. Note that if a single member of your team wishes to submit on December 23, you are required to do so.
 
-The goal of this project is quite broad, students are free to come up with their own ideas. While simulation studies are the designated topic, groups that found interesting data during the small project and would like to carry on analyzing it, or groups interested to study a bit deeper one of the methodological concepts from this course are encouraged to approach the teachers during the exercises and discuss their ideas. Also, prospective topics for the final project will be gradually revealed during the lectures.
+The goal of this project is quite broad, students are free to come up with their own ideas. While simulation studies are the designated topic, groups that found interesting data during the small project and would like to carry on analyzing it, or groups interested in studying a bit deeper one of the methodological concepts from this course are encouraged to approach the teachers during the exercises and discuss their ideas. **Prospective topics for the final project will be gradually revealed during the lectures.**
 
-A part of the grade for the final project (10 % of the total grade, i.e. one quarter of the final project) will be awarded for value added (original data analysis, simulation study answering a previously unclear question, etc.). All of the prospective topics that will be introduced during the lecture will have this element, and by half-way through the semester (when the final project will start) it should be clear through the examples what the project should aspire to. We will also discuss this in person at some point, likely on Week 7.
+A part of the grade for the final project (10 % of the total grade, i.e. one quarter of the final project) will be awarded for value added (original data analysis, simulation study answering a previously unclear question, etc.). All of the prospective topics that will be introduced during the lecture will have this element, and by half-way through the semester (when the final project will start) it should be clear through the examples what the project should aspire to. We will also discuss this in person at some point, likely on Week 7. The remaining three quarters of the project (i.e. 30 % of the total grade) will be awarded for
+
+* quality of the Markdown report
+  - clarity, readability, structure, referencing, etc.
+* graphical considerations
+  - well chosen (as discussed during the course) graphics with captions, referenced from the main text
+* concepts explored beyond the scope of the course
+  - in the soft sense that they were not fully covered during classes
+* overall quality
+  - correctness, demonstration of understanding, etc.
+
+A project seriously lacking in any of the criteria above will be penalized in 5 % reduction(s) in the total grade.
 
 <a name="groups"></a>
 **Groups** can be of size of either 2 or 3 people. The size will *not* matter w.r.t. to grading. However, a group of size 3 will have one additional task to do: as part of their Moodle submission, every team member will individually include a short paragraph describing contributions of every individual member of the team. This is not to be discussed among the team members, as it serves as a safeguard. Regardless of their individual contributions, each member of the team will receive the same grade, apart from where this would be extremely unfair. Such cases will be discussed personally. In case of any team-work problems, the students are encouraged to seek advice (mostly as a group) from the teachers (mostly during the exercise classes).
 
-## 2.3 Grade Calculation
+# 3 Grade Calculation
 
-In the Moodle, your submissions will receive a grade on the 0-100 point scale (e.g. for the assignments, it will be mostly either 0 or 100). Let $a_1,\ldots,a_8$ denote points you receive from the assignments, $s$ be the small project points, and $p$ be the final project points. The final grade will be calculated as
+In the Moodle, your submissions will receive a grade on the percentage scale of the final grade, e.g. the assignments will be awarded between 0 and 5 points (mostly either 0 or 5), the small project between 0 and 20 points (mostly 0,5,10,15 or 20), and the final project between 0 and 40 points (again, mostly divisible by 5). Let $a_1,\ldots,a_8$ denote points you receive from the assignments, $s$ points received for the small project, and $p$ be the final project points. The final grade will be calculated as
 \[
-1 + \frac{0.25}{100}\sum_{j=1}^8 a_j + \frac{1}{100} s + \frac{2}{100} p
+1 + \frac{5}{100}\left(\sum_{j=1}^8 a_j + s + p \right)
 \]
 which gives the best possible grade
 ```{r}
-a <- rep(100,8)
-s <- p <- 100
-1 + 0.25/100*sum(a) + s/100 + 2*p/100
+a <- rep(5,8)
+s <- 20
+p <- 40
+1 + 5/100*(sum(a) + s + p)
 ```
 
-# 3. Materials
+# 4. Materials
 
 All materials will be gradually made available on **GitHub**, specifically in [this repo](https://github.com/TMasak/StatComp). This includes
 
@@ -110,7 +126,7 @@ You will soon learn how to download the up-to-date materials via RStudio, which 
 
 **Moodle** will only be used for its forum and to formally submit assignments (and projects) are receive back the grades (see the next section). There will be no Piazza or video recordings available for this course.
 
-# 4. Handing-in Assignments and Projects
+# 5. Handing-in Assignments and Projects
 
 Almost everything will be done in GitHub. After completing the assignment from Week 1 (i.e. following [this manual](02_Github.html)), you should
 
@@ -119,8 +135,7 @@ Almost everything will be done in GitHub. After completing the assignment from W
     - RStudio
     - Git
 * have your personal GitHub account
-* a *public* repository in GitHub called "StatComp-[your SCIPER]" linked to an RStudio project on your local machine
-    - if you are unsure whether your repo is public, try whether you can access it using the private mode of your browser or ask a friend
+* a *private* repository in GitHub called "StatComp-[your SCIPER]" linked to an RStudio project on your local machine
 
 and be able to push and pull things between GitHub and your local machine.
 
@@ -140,7 +155,7 @@ If on Mac, adjust the shortcuts accordingly.
 
 The workflow above is for assignments only, since the projects require one more ingredient: collaboration. That can either be done locally, synchronizing pushes to the respective repositories on GitHub (which we recommend for the small project), or by actually utilizing the collaborative features of GitHub by working in a single repo and using tools such as *branching*, *forking* and *pull requests* to move forward. For the final project, we would actually suggest something intermediate:
 
-* one student from a group creates a new *public* GitHub repo "SmallProj-[SCIPER]" or "FinalProj-[SCIPER]", respectively
+* one student from a group creates a new *private* GitHub repo "SmallProj-[SCIPER]" or "FinalProj-[SCIPER]", respectively
 * the one student goes to the repo, into settings -> collaborators and adds the other group members, which gives them the right to push into the repo
 * now, each group member can
     - pull from the shared repo when starting to work on the project

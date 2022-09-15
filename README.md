@@ -9,4 +9,4 @@
 All course materials will come here, in this repo. Please read up on
 [the course
 organization](https://htmlpreview.github.io/?https://github.com/TMasak/StatComp/blob/master/Manuals/01_Organization.html).
-This is the only document to be duplicated in the Moodle.
+This is the only document to be available directly from the Moodle.
