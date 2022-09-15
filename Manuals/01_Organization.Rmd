@@ -15,7 +15,7 @@ The most important point is that the course will be hosted on GitHub, specifical
 
 # 1. Course Content
 
-The plan for the lectures is the following:
+The plan for the lectures is as follows:
 
 * Week 1: Introduction & Software
 * Week 2: Ethics & Reproducibility
