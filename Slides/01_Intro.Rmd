@@ -1,0 +1,413 @@
+---
+title: "Week 1: Introduction & Software"
+subtitle: "MATH-517 Statistical Computation and Visualization"
+author: "Tomas Masak"
+date: "`r format(Sys.time(), '%b %d, %Y')`"
+#date: "September 21st 2021"
+output: beamer_presentation
+classoption: "presentation"
+theme: "Madrid"
+colortheme: "seahorse"
+footer: "Copyright (c) 2022, EPFL"
+urlcolor: blue
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+library(bookdown)
+```
+
+## Computation
+
+```{=tex}
+\centering\Large
+Statistical \textbf{Computation} and Visualization
+\bigskip\bigskip
+\normalsize
+```
+
+> Offered the choice between mastery of a five-foot shelf of analytical statistics books and middling ability at performing statistical Monte Carlo simulations, we would surely choose to have the latter skill.
+
+-- Press et al., *Numerical Recipes*
+
+&nbsp;
+
+\pause
+Apart from Monte Carlo (MC), we will cover (re-)sampling methods such as
+
+- cross-validation
+- bootstrap
+- jackknife
+- Bayesian MC extensions
+
+## The Three Pillars of Science
+
+\centering
+\includegraphics[width=0.8\textwidth]{../Plots/pillars_of_science.png}
+
+## Vizualization
+
+```{=tex}
+\centering\Large
+Statistical Computation and \textbf{Visualization}
+\bigskip\bigskip
+\normalsize
+```
+
+```{=tex}
+\includegraphics[width=\textwidth]{../Plots/challenger.png}
+```
+
+## Vizualization
+
+```{=tex}
+\centering\Large
+Statistical Computation and \textbf{Visualization}
+\bigskip\bigskip
+\normalsize
+```
+
+```{=tex}
+\includegraphics[width=0.8\textwidth]{../Plots/challenger_smoother.png}
+```
+
+## Course Content
+
+* Soft Start
+
+  - R and other software
+  - reproducibility and ethics
+  - data wrangling and visualization
+
+* Course Core
+
+  - non-parametric regression
+  - cross-validation
+  - simulations
+  - Monte Carlo (MC)
+  - bootstrap
+  - EM algorithm
+
+* Bayesian Dessert
+
+  - basic thinking
+  - Markov Chain Monte Carlo (MCMC)
+  
+## Polls
+
+* Have you ever written a for-loop and if-else statement?
+* Have you ever worked with R?
+* Have you ever worked with Python, Matlab, etc.?
+* Have you taken a class dedicated to linear models?
+  - prerequisite
+* Can you define the p-value?
+  
+## Course Requirements
+
+* assignments
+
+  - 40 % of the grade (say 8 assignments of 5 %)
+  - to be solved during the exercise classes
+  - graded on the binary scale
+  - collaboration (and questions) encouraged, but individual submissions required (avoid perfect copies!)
+
+* data exploration -- small project
+
+  - 20 % of the grade
+  - if the chosen data set too simple, can be composed of multiple data sets
+  - in groups of 2-3 students
+
+* project: data exploration+analysis *or* simulation study
+
+  - 30+10 % of the grade
+  - the 10 % for added value
+  - in groups of 2-3 students
+  
+## Expected Progress
+
+```{R, echo=F,fig.dim=c(8,4)}
+op <- par(mfrow=c(1,1),mar = rep(0,4), lend=1)
+plot(0,0,col="white",xlim=c(-4,14),ylim=c(1,11),xaxt="n",yaxt="n",xlab="",ylab="",bty="n")
+text(-2,11,"Week")
+text(1:14,11,1:14)
+abline(v=0:14+0.5,lty=2)
+text(-2,10,"Assignment 1")
+points(c(1,3 + 0.5),c(10,10),lwd=10,type="l")
+text(-2,9,"Small Project")
+points(c(3,6 + 0.5),c(9,9),lwd=10,type="l")
+text(-2,8,"Assignment 2")
+points(c(4,5 + 0.5),c(8,8),lwd=10,type="l")
+text(-2,7,"Assignment 3")
+points(c(5,6 + 0.5),c(7,7),lwd=10,type="l")
+text(-2,6,"Assignment 4")
+points(c(6,7 + 0.5),c(6,6),lwd=10,type="l")
+text(-2,5,"Assignment 5")
+points(c(7,8 + 0.5),c(5,5),lwd=10,type="l")
+text(-2,4,"Assignment 6")
+points(c(9,10 + 0.5),c(4,4),lwd=10,type="l")
+text(-2,3,"Assignment 7")
+points(c(11,12 + 0.5),c(3,3),lwd=10,type="l")
+text(-2,2,"Assignment 8")
+points(c(12,13 + 0.5),c(2,2),lwd=10,type="l")
+text(-2,1,"Final Project")
+points(c(5,14 + 0.5),c(1,1),lwd=10,type="l",col="gray")
+points(c(8,14 + 0.5),c(1,1),lwd=10,type="l")
+```
+  
+## Course Requirements
+
+* 1 assignment = 5 % of the grade = 0.25 on the 1-6 grade scale
+
+  - missing all assignments $\Rightarrow$ final grade 4.0 at best!
+
+* R, Markdown and GitHub for the assignments and projects will be needed
+
+  - submission of GitHub links to the Moodle needed for grading purposes
+  - this is not a programming course, learn by doing!
+
+* 2 hours of lecture per week
+  - going through the course content
+* 2 hours of exercises per week
+  - working on assignments and projects
+  - keeping up with the lecture (e.g. with R)
+
+\begin{exampleblock}{}
+\centering\textbf{active participation = success in this course}
+\end{exampleblock}
+
+##
+
+\begin{exampleblock}{}
+\centering \textbf{Questions and feedback are always appreciated.}
+\end{exampleblock}
+\bigskip\bigskip
+
+\begin{exampleblock}{}
+\centering \textbf{Evaluation starts right away!}
+\end{exampleblock}
+
+## Business Software
+
+\begin{columns}
+\column{0.33\textwidth}\centering
+\includegraphics[width=0.5\textwidth]{../Plots/logos/SAS.png}
+\column{0.33\textwidth}\centering
+\includegraphics[width=0.5\textwidth]{../Plots/logos/SPSS.png}
+\column{0.33\textwidth}\centering
+\includegraphics[width=0.5\textwidth]{../Plots/logos/Stata.png}
+\end{columns}
+
+* all commercial
+  - it has pros and cons
+  - all (claim to) offer free academic versions
+* popular in different fields
+  - SAS: biomedicine, clinical research, etc.
+  - SPSS: psychology, social sciences, etc.
+  - STATA: econometrics, finance, etc.
+
+## Academic Software
+
+\begin{columns}
+\column{0.33\textwidth}\centering
+\includegraphics[width=0.5\textwidth]{../Plots/logos/R.jpg}
+
+\textcolor{white}{R}
+\column{0.33\textwidth}\centering
+\includegraphics[width=0.4\textwidth]{../Plots/logos/python.jpg}
+
+Python
+\column{0.33\textwidth}\centering
+\includegraphics[width=0.45\textwidth]{../Plots/logos/matlab.jpg}
+
+Matlab
+\end{columns}
+
+* all well documented, easy to use, with lots of examples and extensive community support
+* each has its strengths and weaknesses, none is perfect
+* we will use R!
+* software packages are our **tools**, not skills!
+
+```{=tex}
+\bigskip
+\begin{columns}
+\column{0.33\textwidth}\centering
+free
+
+open source
+\column{0.33\textwidth}\centering
+free (mostly)
+
+open source (mostly)
+\column{0.33\textwidth}\centering
+paid (accessible)
+
+closed source
+\end{columns}
+
+\bigskip
+\begin{columns}
+\column{0.33\textwidth}\centering
+statistics
+\column{0.33\textwidth}\centering
+machine learning
+\column{0.33\textwidth}\centering
+numerical math
+\end{columns}
+
+\bigskip
+\begin{columns}
+\column{0.15\textwidth}
+\column{0.35\textwidth}\centering
+Data Science
+\column{0.35\textwidth}\centering
+Optimization
+\column{0.15\textwidth}
+\end{columns}
+```
+
+## Statistics is done in R!
+
+```{=tex}
+\begin{columns}
+\column{0.33\textwidth}\centering
+\includegraphics[width=0.8\textwidth]{../Plots/faraway_lm.png}
+\column{0.33\textwidth}\centering
+\includegraphics[width=0.8\textwidth]{../Plots/faraway_glm.png}
+\column{0.33\textwidth}\centering
+\includegraphics[width=0.8\textwidth]{../Plots/faraway_python.png}
+\end{columns}
+\bigskip
+\begin{columns}
+\column{0.33\textwidth}\centering
+2004 -- 1st Edition
+
+2015 -- 2nd Edition
+\column{0.33\textwidth}\centering
+2006
+\column{0.33\textwidth}\centering
+2020
+\end{columns}
+```
+
+## Linear Models Recap
+
+```{=tex}
+\begin{tabular}{rl}
+Data: &  $(Y_1,X_1)^\top,\ldots,(Y_N,X_N)^\top$, $Y_n \in \mathbb{R}$ is the response \bigskip\\
+Gaussian model: &  $Y = (Y_1,\ldots,Y_N)^\top \sim \mathcal{N}(X \beta, \sigma^2 I_{N \times N})$ \\
+& -- $X \in \mathbb{R}^{N \times p}$ is the model matrix containing \\
+& \kern10ex (transformations of) $X_1,\ldots,X_N$ \bigskip\\
+Model:& $Y \sim (X \beta, \sigma^2 I_{N \times N})$ meaning that \\
+& -- $\mathbb{E} Y_n = x_n^\top \beta$ \\
+& -- $\mathrm{var}(Y) = \sigma^2 I$ \bigskip\\
+Least Squares:& $\mathrm{min}_{\beta} \| Y - X\beta \|_2^2$ or $\mathrm{min}_{\beta} \sum_{n}( Y_n - x_n^\top \beta)^2$ \bigskip\\
+Fit:& $\widehat{\beta} = (X^\top X)^{-1} X^\top Y$ assuming $X$ is full-rank\\
+& $\widehat{Y} = X (X^\top X)^{-1} X^\top Y$ are called fitted values
+\end{tabular}
+```
+
+
+
+
+
+## lm Example Takeaways
+
+* doing statistics is more than just "massaging" data and taking whatever comes out
+
+* linear models are the bread and butter of statistics, and as all statistical methods they are most easy to work with in R
+
+* effective visualization is important beyond reporting results (code debugging, model verification, etc.)
+
+## lm Example Takeaways
+
+* Jupyter Notebook (Python) or Live Script (Matlab) seem more interactive than R Markdown
+  - not necessarily a good thing, e.g. reproducibility issues
+
+* one can run R in Jupyter Notebook or conversely Python in R Markdown
+  - I generally do *not* recommend either, except if you, say, work in R Markdown and want to use some Python packages (e.g. for deep learning)
+  
+* instead of R Markdown, one can use R Notebook (also in RStudio) to get some of the Jupyter Notebook interactivity
+
+## RStudio
+
+```{=tex}
+\begin{columns}
+\column{0.25\textwidth}\centering
+\includegraphics[width=\textwidth]{../Plots/logos/git.png}
+\bigskip\bigskip\bigskip
+
+\includegraphics[width=\textwidth]{../Plots/logos/github.png}
+\smallskip
+
+\textcolor{white}{sdf}
+\column{0.05\textwidth}
+\column{0.4\textwidth}\centering
+\includegraphics[width=0.5\textwidth]{../Plots/logos/R.jpg}
+\bigskip
+
+\includegraphics[width=\textwidth]{../Plots/logos/Rstudio.jpg}
+\column{0.05\textwidth}
+\column{0.25\textwidth}\centering
+\includegraphics[width=\textwidth]{../Plots/logos/latex.png}
+\bigskip\bigskip\bigskip
+
+\includegraphics[width=\textwidth]{../Plots/logos/markdown.png}
+\smallskip
+
+\textcolor{white}{sdf}
+\end{columns}
+```
+
+## Our Workflow
+
+* open RStudio
+
+* load some packages
+
+* work in a (R Markdown) script, potentially inside a project
+
+* save your progress
+
+* push your changes to GitHub
+
+[Bookdown](https://bookdown.org/) -- a lot of interesting books written in R Markdown, including one of the references for this course, the [R for Data Science](https://r4ds.had.co.nz/index.html) book co-authored by Hadley Wickham.
+
+## Good Coding Practices
+
+* consistency (following a certain style)
+* indentation
+* naming conventions -- short but informative variable/function names  
+  - `camelCase`
+  - `snake_case` -- my personal preference
+  - `dot.case` -- not bad, but some languages will not allow it
+  - others such as `PascalCase` or `kebab-case` are inferior
+* simplicity
+* comments (more the merrier!)
+* load packages at the top
+* loading data comes next (possibly in a separate script)
+* functions come next (possibly in a separate script)
+* use `set.seed()` if RNG present
+* re-run with empty environment
+
+## Assignment
+
+Go to [Supplement 02](../Manuals/02_Github.html) and set up R, RStudio and GitHub for yourself as described there.
+
+Make your first submission (submit whatever you want) as described in the [course requirements](../Manuals/01_Organization.html). [5 %]
+
+## Exercise
+
+We have done most of the analysis of the `chredlin` data in R, but we have done some pieces in Python and Matlab. Do the full analysis in R, i.e. complete the Markdown script corresponding to R translating the pieces of code from Python and Matlab.
+
+Freedman (2009) Statistical Models, Example 4, p. 75:    
+Suppose $Y$ consists of 100 independent $\mathcal{N}(0,1)$ random variables. This is pure noise. Let $X \in \mathbb{R}^{100 \times 50}$ be the design matrix with independent $\mathcal{N}(0,1)$ variables (just more noise). We regress $Y$ on $X$ (i.e. no intercept). The coefficient of determination $R^2$ will be about 50/100=0.5. Suppose we test each of the 50 coefficients at the 10 % level and keep only the "significant" variables. There will be about $50 \times 0.1 = 5$ keepers (just by chance). Running the regression on the keepers only (again, without intercept), we are likely to get a decent $R^2$ (like 0.2 -- decent by the social-science standards) and dazzling $t$-statistics. Run a couple of simulations and see for yourself.
+
+## References
+
+JJ Faraway (2015) Linear Models with R (2nd Edition)
+
+JJ Faraway (2020) Linear Models with Python
+
+Poldrack (2019) Statistical Thinking for the 21st Century ([online](https://statsthinking21.github.io/statsthinking21-core-site/index.html))
+
+Tufte (1997) Visual Explanations
