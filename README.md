@@ -19,3 +19,4 @@ includes:
     -   not available for Weeks 1 and 3
 -   [Manuals](https://github.com/TMasak/StatComp/tree/master/Manuals) on
     specific topics.
+    -   mostly for the first couple of weeks
