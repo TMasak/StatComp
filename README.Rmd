@@ -18,7 +18,10 @@ knitr::opts_chunk$set(
 <!-- badges: start -->
 <!-- badges: end -->
 
-All course materials will come here, in this repo. Please read up on [the course organization](https://htmlpreview.github.io/?https://github.com/TMasak/StatComp/blob/master/Manuals/01_Organization.html).
+Please read up on [the course organization](https://htmlpreview.github.io/?https://github.com/TMasak/StatComp/blob/master/Manuals/01_Organization.html).
 
+All course materials will gradually come here, in this repo. This includes:
 
-
+* [Slides](https://github.com/TMasak/StatComp/tree/master/Slides) used during the lectures,
+* [Notes](https://github.com/TMasak/StatComp/tree/master/Notes), i.e. lecture notes
+  - not available for Weeks 1 and 3
