@@ -15,5 +15,7 @@ includes:
 -   [Slides](https://github.com/TMasak/StatComp/tree/master/Slides) used
     during the lectures,
 -   [Notes](https://github.com/TMasak/StatComp/tree/master/Notes),
-    i.e. lecture notes
+    i.e. lecture notes, the basis for the slides,
     -   not available for Weeks 1 and 3
+-   [Manuals](https://github.com/TMasak/StatComp/tree/master/Manuals) on
+    specific topics.
