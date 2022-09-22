@@ -102,6 +102,23 @@ Statistical Computation and \textbf{Visualization}
   - prerequisite
 * Can you define the p-value?
   
+## Classes
+
+**Lectures**
+
+* Teacher: Tomas Masak
+* Time: Friday 10:15-12:00
+* Place: GC D0 386
+
+\bigskip
+
+**Exercises**
+
+* Teacher: Almond Stoecker
+  - available only from Week 3 on
+* Time: Friday 13:15-15:00
+* Place: GC D0 386
+  
 ## Course Requirements
 
 * assignments
@@ -391,9 +408,9 @@ Fit:& $\widehat{\beta} = (X^\top X)^{-1} X^\top Y$ assuming $X$ is full-rank\\
 
 ## Assignment
 
-Go to [Supplement 02](../Manuals/02_Github.html) and set up R, RStudio and GitHub for yourself as described there.
+Go to [Manual 02](../Manuals/02_Github.html) and set up R, RStudio and GitHub for yourself as described there.
 
-Make your first submission (submit whatever you want) as described in the [course requirements](../Manuals/01_Organization.html). [5 %]
+Make your first push to GitHub and submission to Moodle (push and submit whatever you want) as described in the [course requirements](../Manuals/01_Organization.html). [5 %]
 
 ## Exercise
 
