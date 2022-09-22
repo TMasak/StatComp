@@ -1,0 +1,59 @@
+---
+title: "How to use Markdown from RStudio"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+This is super easy, just go File -> New File -> R Markdown in the RStudio menu,
+and click OK. This will create a `.Rmd` file (after you save it, of course) which
+already has a sample content in it. This text file is rendered into an HTML file
+by clicking `Knit` at the header of the top-left pane of RStudio.
+
+In Markdown, the text is formatted via syntax not too dissimilar to HTML 
+(see e.g. [here](https://www.markdownguide.org/basic-syntax/)) for some basic syntax,
+with the exception of the code chunks, which are enveloped between three backticks]
+```` ``` ````. The sample file we have opened above contains the following chunk
+
+````
+```{r pressure, echo=FALSE}`r ''`
+plot(pressure)
+```
+````
+
+In the rendered HTML document, this simply shows the plot of `pressure`. The curly
+braces specify the chunk options. `r` specifies the language (Markdown supports other
+languages than R, e.g. Python), the following string gives the chunk a name, and
+`echo=FALSE` specifies the code should not appear in the rendered HTML, but the output
+of the code (the plot itself) should. Other useful options include:
+
+* `include=FALSE` -- code that is evaluated but not shown in the rendered HTML (and neither is any output)
+* `eval=FALSE` -- code that is shown in the rendered HTML, but it is not be evaluated
+
+Math can be written quite well in Markdown. Use the standard dollar wrappers for in-text math
+and the `\[` and  `\]` wrappers for centered formulas. RStudio has a nice functionality of
+showing the Latex results while writing.
+
+Full latex functionality is also possible, but only when the output is set as a PDF, which
+can be specified by replacing `output: html_document` by `output: pdf_document` in the
+Markdown file header. Then, snippets such as the following one
+
+````
+```{=tex}
+\begin{description}
+    \item[\textbf{I.}] first item $\int x$
+    \item[\textbf{II.}] second item $x^2$
+\end{description}
+```
+````
+
+can be used in Markdown. However, it can be a bit tricky to debug your Latex code this way. As such, Markdown mostly shines when projects have limited scale or repetitive functionality. As such, whole books have been written in Markdown, but writing a Master's thesis in it is not a good idea.
+
+All the materials created for this course (including this HTML) are written in Markdown.
+In the GitHub repo of the course, the source `.Rmd` files are available. Feel free to use these as learning materials to pick up Markdown.
+
+
+
+

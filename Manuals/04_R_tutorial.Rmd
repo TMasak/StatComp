@@ -1,0 +1,204 @@
+---
+title: "How to use Markdown from RStudio"
+output:
+  html_document:
+    toc: true
+    code_folding: hide
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+This is a short tutorial for complete beginners in R. It is partly based on exercise sheets for the "Statistical Programming Languages" short course by Eva-Maria Maier and Lisa Steyer to whom we are grateful. There are countless other tutorials available [here](https://cran.r-project.org/other-docs.html).
+
+If you have not done so yet, follow the first part of [the GitHub manual](02_Github.html) to install R and RStudio.
+
+Solutions to the task below appear after clicking the `code` buttons to the right. You can either try to perform the tasks yourselves, or simply reverse-engineer. It is OK not to memorize syntax and instead Google things. Google is your best friend if you don't know the name of a function that could help you. If you know the function name you want to use but do not remember the syntax, use `?function_name`, e.g. `?lm`.
+
+# Basics and Vectors
+
+Open RStudio, create new script by going to File -> New File -> R Script and save it. Find out what your working directory is, and then set it to where your script is saved.
+
+```{r, eval=F}
+getwd() # this outputs is your working directory
+setwd("...") # insert here the path between your current working directory and your script
+# alternatively, you can also close RStudio and re-open it by clicking on your saved script
+```
+
+*Note*: RStudio allows a great way of setting working directory to the one where the script is: `setwd(dirname(rstudioapi::getActiveDocumentContext()$path))`.
+
+In your script, create vectors `x` and `a` of length 10 by sampling from the standard Gaussian and Poisson distribution with $\lambda=1$.
+
+```{r, eval=F}
+x <- rnorm(10)
+a <- rpois(10,lambda=1)
+```
+
+Check that `x` and `a` are both numeric and retype `a` into a factor.
+
+```{r, eval=F}
+is.numeric(x)
+str(a) # tells us more than just the type
+a <- as.factor(a)
+str(a)
+```
+
+Find out how many entries of `x` are greater than 0 and print them.
+
+```{r, eval=F}
+sum(x > 0)
+x[x > 0]
+```
+
+Create a vector `c1` containing numbers from 1 to 10 and a vector `c2` of the same length containing only number 3. Check at which positions the two vectors coincide. Also check where they do not coincide, where `c1` is greater than `c2` and where `c2` is greater than or equal to `c1`.
+
+```{r, eval=F}
+c1 <- 1:10 # or
+c1 <- seq(1,10,by=1)
+c2 <- rep(3,10)
+which(c1 == c2)
+which(c1 != c2)
+which(c1 > c2)
+which(c1 <= c1)
+```
+
+Check out in how many entries `c1` is different from `c2`.
+
+```{r, eval=F}
+sum(c1 != c2)
+# what would I get by running sum(which(c1 != c2)) ?
+```
+
+Print only the even entries of `c1` and odd entries of `c2`.
+
+```{r, eval=F}
+c1[seq(2,10,by=2)]
+c2[seq(1,10,by=2)]
+```
+
+Compute the mean and the standard deviation of your Gaussian sample `x`.
+
+```{r, eval=F}
+mean(x)
+sd(x) # or
+sqrt(var(x))
+```
+
+# Matrices & Data Frames
+
+Form a matrix `Mat` having `x` and `a` in its columns. Form a data frame `Dat` containing `x` and `a`.
+
+```{r, eval=F}
+Mat <- cbind(x,a) # or
+Mat <- matrix(c(x,a),ncol=2) # where c() puts everything it gets into a single vector
+Dat <- data.frame(x=x,a=a)
+str(Mat)
+str(Dat) # use str frequently to check what you are creating
+```
+
+Check the dimensions of `Dat` and `Mat`.
+
+```{r, eval=F}
+dim(Dat)
+dim(Mat)
+```
+
+Retype `Dat` into a matrix `Dat_mat` and check whether `Dat_mat` and `Mat` are identical.
+
+```{r, eval=F}
+Dat_mat <- as.matrix(Dat)
+sum(Dat_mat != Mat)
+```
+
+Check the first few rows of `Dat` and also subset the 3rd row of `Dat` only.
+
+```{r, eval=F}
+head(Dat)
+Dat[3,]
+```
+
+# Functions and Packages
+
+Function calls in R are done as `function_name(arg1, arg2, ...)`, e.g. `seq(1,100,3)` creates a sequence from 1 to 100 by the increments of 3. A more complete function call could be `seq(from=1,to=100,by=3)`. If you know what function to use but not remember e.g. its arguments (or their order), use `?function_name` to get help.
+
+Functions are usually bundled in packages. R itself comes with some base packages that are always loaded and contain some functions. If you want to use packages which are not in the base distribution, you have to load them first using the function `library()` provided with the name of the package. And in case the package has not been previously installed on your system it needs to be done first, e.g. `install.packages("faraway")` installs the package used in the [Linear Models in R](05_lm_R) Markdown script. For some reason, one has to use quotation marks with `install.packages()` but not when loading the package like `library(faraway)`.
+
+Calculate the Frobenius norm of `Mat`.
+
+```{r, eval=F}
+# first Google "Frobenius norm R" to realize the function name "norm"
+?norm # the help page tells us how to specify the Frobenius norm
+norm(Mat,type="F")
+# or simply calculate Frobenius norm using the functions you already know
+sqrt(sum(Mat^2))
+```
+
+Create your own function that will calculate the Frobenius norm
+```{r, eval=F}
+frobenius1 <- function(M){
+  return(sqrt(sum(M^2)))
+}
+# using for-loops and wasting space:
+frobenius2 <- function(M){
+  res <- 0
+  dims <- dim(M)
+  d1 <- dims[1]
+  d2 <- dims[2]
+  for(i in 1:d1){
+    for(j in 1:d2){
+      res <- res + M[i,j]^2
+    }
+  }
+  res <- sqrt(res)
+  return(res)
+}
+
+frobenius1(Mat)
+frobenius2(Mat)
+```
+
+Install and load the `tidyverse` and `faraway` packages.
+
+```{r, eval=F}
+install.packages("tidyverse")
+library(tidyverse)
+install.packages("faraway")
+library(faraway)
+```
+
+# Basic Plotting
+
+Attach the `chredlin` data set from the `faraway` package using the function `data()`.
+
+```{r, eval=F}
+?data # scroll the help page down to examples to see how to load data
+data(chredlin, package="faraway")
+str(chredlin)
+```
+
+Change the variable `side` to numeric.
+
+```{r, eval=F}
+chredlin$side <- as.numeric(chredlin$side) # or equivalently
+chredlin[,7] <- as.numeric(chredlin[,7])
+str(chredlin)
+```
+
+Explore a couple of variables by plotting their histograms.
+
+```{r, eval=F}
+par(mfrow=c(1,2)) # specify that plots should be in one row and two columns
+hist(chredlin$involact)
+hist(chredlin$age)
+```
+
+Plot scatterplots between the response variable `involact` and a couple of covariates. Notice that you don't need to specify `par(mfrow=c(1,2))`, it will be remembered until the plotting device is closed by `dev.off()`.
+
+```{r, eval=F}
+plot(chredlin$race,chredlin$involact)
+plot(chredlin$age,chredlin$involact)
+```
+
+Compared to the plots in the [Linear Models in R](05_lm_R) Markdown script, the scatterplots above are quite ugly. The reason is that basic R plotting requires some tweaking before it starts looking beautiful. Alternatively, one can use the `tidyverse` syntax like in the [Linear Models in R](05_lm_R) Markdown script, we will learn about `tidyverse` during the lecture of Week 2. Then you will be able to revisit and fully understand the [Linear Models in R](05_lm_R) Markdown script, and start working on your small project.
+

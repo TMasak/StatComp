@@ -1,0 +1,133 @@
+---
+title: "Linear Models in R(Markdown)"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Data and Problem Description
+
+Insurance redlining refers to the practice of refusing to issue insurance to certain
+types of people or within some geographic area. The name comes from the act of
+drawing a red line around an area on a map. Now few would quibble with an insurance
+company refusing to sell a car insurance to a frequent drunk driver, but other
+forms of discrimination would be unacceptable.
+
+In the late 1970s, the US Commission on Civil Rights examined charges by several
+Chicago community organizations that insurance companies were redlining their
+neighborhoods. Because comprehensive information about individuals
+homeowners was not available, the number of FAIR plan policies written
+and renewed in Chicago by ZIP code for the months of December 1977 through May
+1978 was recorded. The FAIR plan was offered by the city of Chicago as a default
+policy to homeowners who had been rejected by the voluntary market. Information
+on other variables that might affect insurance writing such as fire and theft rates was
+also collected at the ZIP code level. The variables are:
+
+* `involact` new FAIR plan policies and renewals per 100 housing units,
+* `fire` fires per 100 housing units,
+* `theft` thefts per 1000 population,
+* `race` racial composition in percentage of minority,
+* `age` (of housing) percentage of housing units built before 1939,
+* `income` median family income in thousands of dollars,
+* `side` north or south side of Chicago.
+
+The variable `involact` acts as a measure of insurance availability in the voluntary market, since most FAIR plan policyholders secure such coverage only after they have been rejected by the voluntary market. Insurance companies claim to reject insurances based on their pass losses (captured in variables `theft` and `fire`). The U.S. Commission on Civil Rights in 1979 was interested in how much `income`, `age` of housing, and in particular `race` affect insurance availability.
+
+```{r, warning=F}
+library(faraway)
+data(chredlin, package="faraway") # attaches the data from the faraway package
+str(chredlin) # the name "chredlin" refers to CHicago REDLINing
+head(chredlin)
+```
+
+The first column are ZIP codes, since we only have aggregated data for counties (not for individuals). This is not unreasonable here, due to the nature of redlining.
+
+# Data Exploration
+
+Let's take a look at the individual variables, e.g. using histograms
+
+```{r, warning=F, message=F}
+library(tidyverse)
+chredlin %>% mutate(side = as.numeric(side)) %>% pivot_longer(everything()) %>%
+  ggplot(aes(value)) + facet_wrap(~ name, scales = "free") + geom_histogram()
+```
+
+```{r, warning=F, message=F, include=F}
+chredlin %>% mutate(side = as.numeric(side), fire=log(fire), income=log(income), theft=log(theft), age=age^2) %>% pivot_longer(everything()) %>%
+  ggplot(aes(value)) + facet_wrap(~ name, scales = "free") + geom_histogram()
+```
+
+The univariate distributions look quite nice for most of the variables. For example, we have a good spread in `race`, so we should be capable to asses its effect quite accurately. There are more features to be noticed:
+
+* `involact` has some concentration at 0, casting doubts on the usage of a linear model,
+* many variables seem to be skewed and transformations should be explored,
+  - e.g. using log-transform for `income` and `fire` seems like a no-brainer, also due to interpretation
+* there is an outlier visible at the right tail of `theft`, and other potential outliers.
+
+Will not act on these observations at this point, with the exception of taking `log(income)`.
+
+Now let us explore relationships between the individual predictors and the response. The following plots show the simple regression lines with 95 % confidence bands (for the regression line). Jittering has been added to the variable `side` to avoid overplotting.
+
+```{r, warning=F, message=F}
+p1 <- ggplot(chredlin,aes(race,involact)) + geom_point() +stat_smooth(method="lm")
+p2 <- ggplot(chredlin,aes(fire,involact)) + geom_point() +stat_smooth(method="lm")
+p3 <- ggplot(chredlin,aes(theft,involact)) + geom_point() +stat_smooth(method="lm")
+p4 <- ggplot(chredlin,aes(age,involact)) + geom_point() +stat_smooth(method="lm")
+p5 <- ggplot(chredlin,aes(income,involact)) + geom_point() +stat_smooth(method="lm")
+p6 <- ggplot(chredlin,aes(side,involact)) + geom_point(position = position_jitter(width = .2,height=0))
+
+library(ggpubr)
+ggarrange(p1,p2,p3,p4,p5,p6)
+```
+
+Without a doubt, we see that `race` has a strong correlation with the response variable, potentially suggesting the bad practice of insurance redlining based on race. However, we also may be observing confounding: can insurance companies claim that this is due to correlation between risks (`fire` and `thift`) and `race`?
+
+```{r, fig.dim = c(6, 3)}
+p1 <- ggplot(chredlin,aes(race,fire)) + geom_point() +stat_smooth(method="lm")
+p2 <- ggplot(chredlin,aes(race,theft)) + geom_point() +stat_smooth(method="lm")
+ggarrange(p1,p2)
+```
+
+There are obviously positive relationships between `race` (percentage of minorities) and the variables `fire` and `theft`.
+
+# Full Model and Diagnostics
+
+Here is the full model:
+
+```{r}
+lm1 <- lm(involact ~ race + fire + theft + age + log(income), chredlin)
+summary(lm1)
+```
+
+And here are the basic diagnostic plots:
+
+```{r, fig.dim = c(7, 7)}
+# base R plots are easier to read in this case
+par(mfrow=c(2,2)) # defines 2x2 grid for plotting
+plot(lm1, 1, pch=16)
+plot(lm1, 2, pch=16)
+plot(lm1, 3, pch=16)
+plot(lm1, 5, cook.levels = c(8/(dim(chredlin)[1]-2*(dim(chredlin)[2]-1)),4/dim(chredlin)[1]))
+```
+
+Since Cook's distance is a function of leverage and standardized residuals, one can draw contour's of Cook's distance directly to the last plot. A large Cook's distance hints influential observations. Two commonly used rule of thumbs are $4/n$ and $8/(n-2p)$, which are the two contours drawn.
+
+```{r, fig.dim = c(7, 7), include=F}
+# base R plots are easier to read in this case
+library(olsrr)
+ols_plot_cooksd_bar(lm1)
+ols_plot_dfbetas(lm1)
+ols_plot_resid_lev(lm1)
+```
+
+The weird line formed by points to the left of the top-left plot is due to the many zeros in the response. Otherwise the plots look alright, apart from the obvious outliers. Interestingly, removing those outliers may lead to a model where the only significant predictor is `fire`. Let's check this out in the Python script.
+
+## References
+
+Faraway J.J. (2015) *Linear Models with R*. Chapman and Hall/CRC. (2nd Edition)
+
+
+
+

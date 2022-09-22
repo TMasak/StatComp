@@ -408,16 +408,23 @@ Fit:& $\widehat{\beta} = (X^\top X)^{-1} X^\top Y$ assuming $X$ is full-rank\\
 
 ## Assignment
 
+"**Assignment**" = **mandatory**, counts towards the final grade [5 %]
+
+\bigskip
+
 Go to [Manual 02](../Manuals/02_Github.html) and set up R, RStudio and GitHub for yourself as described there.
 
-Make your first push to GitHub and submission to Moodle (push and submit whatever you want) as described in the [course requirements](../Manuals/01_Organization.html). [5 %]
+Make your first push to GitHub and submission to Moodle (push and submit whatever you want) as described in the [course requirements](../Manuals/01_Organization.html).
 
 ## Exercise
 
-We have done most of the analysis of the `chredlin` data in R, but we have done some pieces in Python and Matlab. Do the full analysis in R, i.e. complete the Markdown script corresponding to R translating the pieces of code from Python and Matlab.
+"**Exercise**" = does not count towards the grade
 
-Freedman (2009) Statistical Models, Example 4, p. 75:    
-Suppose $Y$ consists of 100 independent $\mathcal{N}(0,1)$ random variables. This is pure noise. Let $X \in \mathbb{R}^{100 \times 50}$ be the design matrix with independent $\mathcal{N}(0,1)$ variables (just more noise). We regress $Y$ on $X$ (i.e. no intercept). The coefficient of determination $R^2$ will be about 50/100=0.5. Suppose we test each of the 50 coefficients at the 10 % level and keep only the "significant" variables. There will be about $50 \times 0.1 = 5$ keepers (just by chance). Running the regression on the keepers only (again, without intercept), we are likely to get a decent $R^2$ (like 0.2 -- decent by the social-science standards) and dazzling $t$-statistics. Run a couple of simulations and see for yourself.
+\bigskip
+
+1. Familiarize yourselves with Markdown, and R itself by following the respective Manuals available in the GitHub repo.
+
+2. We have done most of the analysis of the `chredlin` data in R, but we have done some pieces in Python and Matlab. Do the full analysis in R, i.e. complete the Markdown script corresponding to R translating the pieces of code from Python and Matlab. Also try to improve the model by considering transformations of (some of the variables.
 
 ## References
 
