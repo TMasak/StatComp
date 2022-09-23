@@ -17,6 +17,23 @@ knitr::opts_chunk$set(echo = FALSE)
 library(bookdown)
 ```
 
+## Classes
+
+**Lectures**
+
+* Teacher: Tomas Masak
+* Time: Friday 10:15-12:00
+* Place: GC D0 386
+
+\bigskip
+
+**Exercises**
+
+* Teacher: Almond Stoecker
+  - available only from Week 3 on
+* Time: Friday 13:15-15:00
+* Place: GC D0 386
+
 ## Computation
 
 ```{=tex}
@@ -58,6 +75,12 @@ Statistical Computation and \textbf{Visualization}
 \includegraphics[width=\textwidth]{../Plots/challenger.png}
 ```
 
+## Bad Vizualization
+
+```{=tex}
+\includegraphics[width=\textwidth]{../Plots/handwritten.png}
+```
+
 ## Vizualization
 
 ```{=tex}
@@ -71,7 +94,7 @@ Statistical Computation and \textbf{Visualization}
 \includegraphics[width=0.8\textwidth]{../Plots/challenger_smoother.png}
 ```
 
-## Course Content
+## Course Content (Chronologically)
 
 * Soft Start
 
@@ -81,6 +104,7 @@ Statistical Computation and \textbf{Visualization}
 
 * Course Core
 
+  - kernel density estimation
   - non-parametric regression
   - cross-validation
   - simulations
@@ -101,23 +125,6 @@ Statistical Computation and \textbf{Visualization}
 * Have you taken a class dedicated to linear models?
   - prerequisite
 * Can you define the p-value?
-  
-## Classes
-
-**Lectures**
-
-* Teacher: Tomas Masak
-* Time: Friday 10:15-12:00
-* Place: GC D0 386
-
-\bigskip
-
-**Exercises**
-
-* Teacher: Almond Stoecker
-  - available only from Week 3 on
-* Time: Friday 13:15-15:00
-* Place: GC D0 386
   
 ## Course Requirements
 
@@ -264,11 +271,11 @@ closed source
 \bigskip
 \begin{columns}
 \column{0.33\textwidth}\centering
-statistics
+Statistics
 \column{0.33\textwidth}\centering
-machine learning
+Machine Learning
 \column{0.33\textwidth}\centering
-numerical math
+Numerical Math
 \end{columns}
 
 \bigskip
@@ -316,7 +323,7 @@ Gaussian model: &  $Y = (Y_1,\ldots,Y_N)^\top \sim \mathcal{N}(X \beta, \sigma^2
 & \kern10ex (transformations of) $X_1,\ldots,X_N$ \bigskip\\
 Model:& $Y \sim (X \beta, \sigma^2 I_{N \times N})$ meaning that \\
 & -- $\mathbb{E} Y_n = x_n^\top \beta$ \\
-& -- $\mathrm{var}(Y) = \sigma^2 I$ \bigskip\\
+& -- $\mathrm{var}(Y) = \sigma^2 I_{N \times N}$ \bigskip\\
 Least Squares:& $\mathrm{min}_{\beta} \| Y - X\beta \|_2^2$ or $\mathrm{min}_{\beta} \sum_{n}( Y_n - x_n^\top \beta)^2$ \bigskip\\
 Fit:& $\widehat{\beta} = (X^\top X)^{-1} X^\top Y$ assuming $X$ is full-rank\\
 & $\widehat{Y} = X (X^\top X)^{-1} X^\top Y$ are called fitted values
