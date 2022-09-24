@@ -32,4 +32,19 @@ For example, clicking
 opens HTML code of the GitHub manual, but clicking
 [here](https://htmlpreview.github.io/?https://github.com/TMasak/StatComp/blob/master/Manuals/02_Github.html)
 will render the page for display. This will soon not be needed once you
-have your RStudio \<-\> GitHub connection set up.
+have your RStudio \<-\> GitHub connection set up and this repo cloned on
+your local machine (then you will simply open any document on your
+machine, without coming here to GitHub).
+
+## Acknowledgements
+
+This course was partially inspired by various previously existing
+courses, and the credit goes to their creators:
+
+-   Marek Omelka, Charles University ([course
+    notes](https://www2.karlin.mff.cuni.cz/~omelka/Vyuka_nmst434_2122.php)),
+-   Peter Bühlmann and Martin Mächler, ETHZ ([course
+    notes](https://stat.ethz.ch/education/semesters/ss2010/CompStat/)),
+-   Guillaume Dehaene, EPFL,
+-   Jaromír Antoch, Charles University,
+-   Mehdi Gholam, EPFL.
