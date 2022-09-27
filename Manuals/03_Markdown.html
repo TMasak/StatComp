@@ -416,6 +416,13 @@ not a good idea.</p>
 written in Markdown. In the GitHub repo of the course, the source
 <code>.Rmd</code> files are available. Feel free to use these as
 learning materials to pick up Markdown.</p>
+<p><em>Note</em>: If you want to run all chunks of the code in an
+<code>.Rmd</code>, run in console</p>
+<pre><code>library(knitr)
+knit(&#39;path_to_the_rmd_file/file_name.Rmd&#39;)</code></pre>
+<p>And if you only want to run the code up to a certain point in the
+<code>.Rmd</code> file, add <code>stop(&#39;here&#39;)</code> inside a code
+chunk exactly where you want to stop.</p>
 
 
 

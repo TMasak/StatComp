@@ -1,0 +1,468 @@
+---
+title: "Exploring Data with `tidyverse`"
+output:
+  html_document:
+    toc: true
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE)
+```
+
+# 1. Data Description
+
+We will use two data sets for illustration.
+
+## 1.1 Chicago Redlining
+
+Insurance redlining refers to the practice of refusing to issue insurance to certain
+types of people or within some geographic area. The name comes from the act of
+drawing a red line around an area on a map. Now few would quibble with an insurance
+company refusing to sell auto insurance to a frequent drunk driver, but other
+forms of discrimination would be unacceptable.
+
+In the late 1970s, the US Commission on Civil Rights examined charges by several
+Chicago community organizations that insurance companies were redlining their
+neighborhoods. Because comprehensive information about individuals being refused
+homeowners insurance was not available, the number of FAIR plan policies written
+and renewed in Chicago by ZIP code for the months of December 1977 through May
+1978 was recorded. The FAIR plan was offered by the city of Chicago as a default
+policy to homeowners who had been rejected by the voluntary market. Information
+on other variables that might affect insurance writing such as fire and theft rates was
+also collected at the ZIP code level. The variables are:
+
+* `involact` new FAIR plan policies and renewals per 100 housing units,
+* `fire` fires per 100 housing units,
+* `theft` thefts per 1000 population,
+* `race` racial composition in percentage of minority,
+* `age` (of housing) percentage of housing units built before 1939,
+* `income` median family income in thousands of dollars,
+* `side` north or south side of Chicago.
+
+The variable `involact` acts as a measure of of insurance availability in the voluntary market, since most FAIR plan policyholders secure such coverage only after they have been rejected by the voluntary market. Insurance companies claim to reject insurances based on their pass losses (captured in variables `theft` and `fire`). The U.S. Commission on Civil Rights in 1979 was interested in how much `income`, `age` of housing, and in particular `race` affect insurance availability.
+
+```{r, warning=F}
+library(faraway)
+data(chredlin, package="faraway") # attaches the data from the faraway package
+head(chredlin)
+```
+
+## 1.2 Flights
+
+The following data set contains about 1/4 million flights that departed from New York City in 2014.
+
+```{r}
+library(data.table)
+flights <- fread("https://raw.githubusercontent.com/Rdatatable/data.table/master/vignettes/flights14.csv")
+# 1/4 million rows, so subsample
+```
+
+The variables are self-explanatory in this case
+
+Since the data has so many rows, let's sub-sample it.
+
+```{r}
+# flights <- flights[sample(1:dim(flights)[1], 5000),] # base R version of sub-sampling
+library(tidyverse)
+flights <- flights %>%
+  slice_sample(n=5000)                               # tidyverse version of sub-sampling
+head(flights)
+```
+
+# 2. Data Manipulation
+
+The basic verbs (functions) which will allow us to do most of the data manipulation tasks are
+
+* `filter` picks observations by chosen values
+  - `select` picks variables (by their names), hence is a poor "transpose" of `filter`
+* `mutate` creates new variables as functions of existing ones
+* `arrange` orders the observations
+* `group_by` allows all of the above to work locally
+  - `summarize` collapses values down to a single summary -- only useful together with `group_by`
+
+First, let us drop the non-numerical variables. We can either select all but what we want to drop or, more conveniently, use the minus-notation to specify directly what we want to drop.
+```{r}
+flights <- select(flights, -carrier, -origin, -dest)
+head(flights)
+```
+
+
+As an example, let us filter flights that departed on the April Fool's day:
+
+```{r}
+fools <- filter(flights, month == 4, day == 1) # all flights on April 1st
+summarize(fools, n()) # in our sub-sample, we have 17 flights on April 1st
+```
+
+When working with tidyverse, it is customary to use the "pipe" operator `%>%`. Basically, `f(x,y)` is equivalent to `x %>% f(y)`. This is useful when chaining operations (composing functions), e.g.
+```
+g(f(x,y),z)  # is equivalent to
+x %>% f(y) %>% g(z)
+```
+While mathematically we are composing functions, for data manipulation it is often useful to think about chaining operations, i.e. using the pipe `%>%`.
+
+For example, the two lines of code above can be tweaked to not store the `fools` variable by either composing functions or chaining operations:
+```{r, eval=F}
+summarize(filter(flights, month == 4, day == 1), n()) # or
+flights %>% filter(month ==4, day == 1) %>% summarize(n())
+```
+
+What if we want to know the number of flights on any given day?
+```{r}
+flights %>% 
+  group_by(month, day) %>% 
+  summarize(n()) %>% 
+  head()
+```
+
+The original data set was arranged by `month`, `day` and `hour`, but we have lost this ordering by sub-sampling.
+```{r}
+head(flights)
+```
+So let's fix this by `arrange()`.
+```{r}
+flights <- flights %>% 
+  arrange(month, day, hour)
+head(flights)
+```
+
+Let's read and sub-sample the data again
+```{r}
+flights <- fread("https://raw.githubusercontent.com/Rdatatable/data.table/master/vignettes/flights14.csv")
+flights <- flights %>%
+  slice_sample(n=5000)
+str(flights)
+```
+We may notice that `carrier`, `origin` and `dest` are characters, but they should really be factors.
+We can use `mutate()` to rectify that:
+```{r}
+flights <- flights %>%
+  mutate(carrier = as.factor(carrier),
+          origin = as.factor(origin),
+            dest = as.factor(dest))
+str(flights)
+```
+
+The verb `mutate()` can also be used to create new variables from existing variables. For example, we might want to calculate what would the air-time be if there were no delays, or we might want to create a single departure time column using day, month and hour.
+```{r}
+flights <- flights %>%
+  mutate(no_delay_air_time = air_time + dep_delay - arr_delay,
+         HHDDMMYYYY = 10^8*hour + 10^6*day + 10^4*month + year)
+```
+Note: the way we created the `HHDDMMYYYY` is only for illustration purposes, there are better ways to handle time variables!
+
+# 3. Basic Charts
+
+## 3.1 Histograms
+
+Basic bar plot showing number of flights for different carriers:
+
+```{r}
+ggplot(data = flights) + 
+  geom_bar(mapping = aes(x = carrier))
+```
+
+We can split every bar by departure airport (i.e. variable `origin`) by adding the `fill` argument.
+
+```{r}
+ggplot(data = flights) + 
+  geom_bar(mapping = aes(x = carrier, fill = origin))
+```
+
+If we wanted one histogram for each NY airport instead, we could use `facet_wrap`:
+
+```{r}
+ggplot(data = flights) + 
+  geom_bar(mapping = aes(x = carrier)) +
+  facet_wrap(~ origin)
+```
+
+What if we wanted to add numbers denoting the bin sizes?
+
+```{r}
+ggplot(data = flights) + 
+  geom_bar(mapping = aes(x = carrier)) +
+  stat_count(mapping = aes(x = carrier, label=..count.., y=..count.. + 40), geom="text", size=4, color="blue")
+```
+
+To show labels for split bars above, one just adds `group=origin` in the `stat_count`'s `aes`, but it is impossible to vertically align the text properly. We bypass it by creating a new variable `veralign`, which controls the vertical alignment.
+
+```{r}
+n_flights <- flights %>%
+  group_by(origin, carrier) %>%
+  summarise(count = n()) %>% # now we have a table with the hist cell counts
+  ungroup() %>%
+  group_by(carrier) %>%
+  arrange(desc(origin)) %>% # needed because histogram ordered alphabetically from the top
+  mutate(veralign = cumsum(count) - count/2) %>% # here we calculate the vertical alignment and append it to the data set
+  ungroup() # drop the grouping
+
+ggplot() + 
+  geom_bar(data = flights, mapping = aes(x = carrier, fill = origin)) +
+  geom_text(data=n_flights, mapping = aes(x = carrier, label=count, y=veralign), size=4)
+```
+
+As long as we are plotting frequencies of occurrence, there is little difference between bar plots and histograms. If the variable on the x-axis is categorical, we speak of bar plots, while if the variable is numerical and some binning has to be done, we speak of histograms. For example:
+
+```{r}
+ggplot() + 
+  geom_histogram(data = flights, mapping = aes(x = dep_delay, fill=carrier), binwidth = 5)
+```
+
+But we may also scale the y-axis to show probabilities (total area equal to one), instead of frequencies (total area equal to the number of observations). In such a case, histogram can be considered an estimator of density function (more on that later in the semester). Hence histograms are often overlaid with other density estimators. We will see that later.
+
+
+## 3.2 Scatterplots
+
+Here we take a look again at the insurance redlining data, where we are interested in the effect of `race` on the response variable. Let's start with the marginal relationship of the response on `race`, which is what we are mostly interested in. We can distinguish 
+
+```{r}
+ggplot(data = chredlin, mapping = aes(x = race, y = involact, color = side, shape = side)) +
+  geom_point() +
+  scale_color_manual(values = c("blue","red")) +
+  scale_shape_manual(values = c(1,2))
+```
+
+```{r}
+ggplot(data = chredlin, mapping = aes(x = race, y = involact, shape = side, color = side)) +
+  geom_point() + # adds a layer to the empty plot above
+  stat_smooth(method=lm) # adds a regression line too
+```
+
+There is probably no difference between north and south w.r.t. the relationship between the response and `race`, but it might be a different story for `fire`
+
+```{r}
+ggplot(data = chredlin, mapping = aes(x = fire, y = involact, shape = side, color = side)) +
+  geom_point() + # adds a layer to the empty plot above
+  stat_smooth(method=lm) # adds a regression line too
+```
+
+What if I want only a single regression line but ability to distinguish between points at the same time? I could either use different mappings for every layer
+
+```{r}
+ggplot(data = chredlin) +
+  geom_point(mapping = aes(x = fire, y = involact, shape = side, color = side)) +
+  stat_smooth(method=lm, mapping=aes(x = fire, y = involact))
+```
+
+or, equivalently, use one global mapping in ggplot (the most general one) and then specify it a bit more for some layers
+
+```{r}
+ggplot(data = chredlin, mapping=aes(x = fire, y = involact)) +
+  geom_point(mapping = aes(shape = side, color = side)) +
+  stat_smooth(method=lm)
+```
+
+If we want to split into multiple plots, use the `facet_wrap` function
+
+```{r}
+ggplot(data = chredlin, mapping = aes(x = fire, y = involact, shape = side, color = side)) +
+  geom_point() +
+  stat_smooth(method=lm) +
+  facet_wrap(~ side) # split by a value of a factor
+```
+
+For faceting by two factor variable, we can use `facet_grid` instead, such as if we wanted to create scatterplots for our `flights` data, split e.g. by `carrier` and `origin` (we filter only some carriers so we don't have zilion plots).
+
+```{r}
+flights %>%
+  filter(carrier %in% c("AA", "UA", "DL", "US")) %>%
+  ggplot(mapping = aes(x = dep_delay, y = arr_delay)) +
+  geom_point() +
+  stat_smooth(method=lm) +
+  facet_grid(origin ~ carrier)
+```
+
+Exercise: create histograms of `dep_delay` for all three `origins` and seven consecutive days in the `flights` data set.
+
+Now, when we analyzed the `chredlin` data set during the first lecture, we discovered some outliers and leverage points. If we looked at it closer, we would have identified that these observations (given by row numbers) are worth a closer look:
+
+```{r}
+outliers <- c(3,6,35)
+leverage_pts <- c(7,24)
+outliers <- chredlin[outliers,]
+leverage_pts <- chredlin[leverage_pts,]
+```
+
+Let's now make some scatterplots with the outliers and leverage points highlighted by overploting.
+
+```{r}
+ggplot() +
+  geom_point(data = chredlin, mapping = aes(x = fire, y = involact)) +
+  geom_point(data = outliers, mapping = aes(x = fire, y = involact), col = "blue", pch = 17, size=3) +
+  geom_point(data = leverage_pts, mapping = aes(x = fire, y = involact), col = "red", pch = 18, size=3)
+```
+
+Alternatively, we could incorporate the information about which points are outliers and which are leverage points into the data set as a new variable and use it for plotting. The code is quite ugly (notice how we start with booleans, then turn them into numericals, and then re-type them into factors), but it does the job.
+
+```{r}
+outliers <- I(1:nrow(chredlin) %in% c(3,6,35))
+leverage_pts <- I(1:nrow(chredlin) %in% c(7,24))
+chredlin <- chredlin %>%
+  mutate(out_lev =  as.factor(outliers + 2*leverage_pts))
+levels(chredlin$out_lev) <- c("normal obs", "outlier", "leverage point")
+
+ggplot(data = chredlin) +
+  geom_point(mapping = aes(x = fire, y = involact, shape = out_lev, color = out_lev, size = out_lev)) +
+  scale_size_manual(values = c(2,4,4))
+```
+
+Another alternative would be to use `fortify()` to add residuals and Cook's distances from the model fit directly to the data set. Then we could use `mutate()` more naturally to decide which observations are outliers and leverage points.
+
+## 3.3 Boxplots
+
+Similarly to histograms, boxplots can give us some idea about distributions. Unlike histograms, boxplots do not really capture an underlying density shape, but only visually give several summary statistics and points in the tails. To show anything meaningful about the `dep_delay`, we have to change the scale of the y-axis.
+
+```{r}
+my_y_scale <- c(-2.5,0,2.5,5)
+my_transform <- function(x) sign(x)*log(1+abs(x))
+my_inverse <- function(x) round( sign(x)*(exp(abs(x))-1), 2)
+flights %>%
+  mutate(log_dep = my_transform(dep_delay)) %>%
+  ggplot(mapping = aes(x = carrier, y = log_dep)) + geom_boxplot() +
+  scale_y_continuous(breaks = my_y_scale,
+                     labels = my_inverse(my_y_scale))
+```
+
+Using the `fill` argument here creates a grouped boxplot, where grouping is given by the `fill` variable. To reduce the size of the plot, we filter only four carriers.
+
+```{r}
+my_y_scale <- seq(-3,7,by=1)
+my_transform <- function(x) sign(x)*log(1+abs(x))
+my_inverse <- function(x) round( sign(x)*(exp(abs(x))-1), 2)
+flights %>%
+  filter(carrier %in% c("AA", "B6", "DL", "EV")) %>%
+  mutate(log_dep = my_transform(dep_delay)) %>%
+  ggplot(mapping = aes(x = carrier, y = log_dep, fill = origin)) + geom_boxplot() +
+  scale_y_continuous(breaks = my_y_scale,
+                     labels = my_inverse(my_y_scale)) # +
+  # theme_classic()
+  # theme(panel.grid.major.x = element_blank() ,
+  #       panel.grid.major.y = element_line(size=.1, color="gray60", linetype=2),
+  #       rect = element_blank(),
+  #       axis.line = element_line(size=.1, color="black"))
+```
+
+## 3.4 Multiple Plots
+
+There are numerous ways how to display multiple plots. The default is to set `par(mfrow = c(n_rows, n_cols))` before plotting, an alternative is the `lattice` package, but these do not work with `ggplot`. With `ggplot`, one can utilize `ggarrange()` from the `ggpubr` package (see Manual 05). However, these will require you to do a lot of copy-pasting since you still need to create plots individually, but sometimes we want to create numerous plots similar in nature. To this point, the `ggplot2`'s `facet_wrap` function allows you to split into numerous plots by a value of a factor.
+
+But what if we wish to create one plot for every variable, like we did in Manual 05? This is doable with `facet_wrap` provided we have:
+
+* all the values (in our data frame) given as a single variable
+* another variable linking the original variables to the values.
+
+This is exactly what we get by using `pivot_longer()` below. The argument `everything()` specifies we want to keep all the variables, otherwise we could use the variable names like with `select()` (just here, multiple variables have to be wrapped in `c()` due to the function's syntax) to keep only some or discard some variables. `pivot_longer()` will give us a long-format data frame with two columns: `value` and `name`. Then we plot `value` and wrap the facets based on `name`. 
+
+```{r}
+data(chredlin, package="faraway")
+chredlin %>% mutate(side = as.numeric(side)) %>% 
+  pivot_longer(everything()) %>%
+  ggplot(aes(value)) + facet_wrap(~ name, scales = "free") + geom_histogram()
+```
+
+The complement of `pivot_longer()` is `pivot_wider()`. We may want to use it e.g. after `group_by()` and `summarize()`, which naturally lead to a long table. For example, assume we want to produce a heatmap of the average departure delay of flights on different days (x-axis) and months (y-axis), in order to see average departure delay in a calendar-like fashion. While this is not terribly useful, it is done below.
+
+```{r}
+heat_dat <- flights %>% 
+  group_by(month, day) %>%
+  summarize(count = mean(dep_delay)) %>%
+  pivot_wider(names_from = day, values_from = count) %>%
+  ungroup() %>%
+  select(-month)
+heat_dat[is.na(heat_dat)] <- 0
+library(lattice)
+levelplot(as.matrix(t(heat_dat)))
+```
+
+While we could create a heatmap using `ggplot2`'s `geom_tile()`, I personally find `levelplot()` of the `lattice` package more useful for quick plotting. One can do great heatmaps with `ggplot2` and `geom_tile()`, but it requires some work to set up the color schemes and to magnify the colorkey.
+
+While the previous heatmap is not so useful, we will later see that heatmaps are quite handy e.g. when probing performance of a certain method based on two parameters.
+
+## 3.5 Line Plots
+
+There is nothing interesting about line plots, they are probably the first thing that comes to anyone's mind under the word "plot".
+They are mostly useful when there is a linearly ordered variable, typically time, and we are interested in evolution of some of the other variables with respect to the linearly ordered variable.
+
+For example, below we load the data containing the cumulative number of Covid-19 cases for different countries. However, the data are in a weird format, so we get to practice some data wrangling as well.
+
+```{r}
+covid <- read.csv("https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_time_series/time_series_covid19_confirmed_global.csv")
+str(covid, list.len=8)
+```
+
+The data frame has the following structure
+
+* time series for a given country is given as an observation with the name of the country as the variable `Country.Region`,
+* some country names are unique in the variable `Country.Region` while others appear with different multiplicities, distinguished by another `chr` variable `Province.State`, and
+* time is given in variable names and in a strange format, e.g. `X1.22.20` is January 22, 2020.
+
+The first point is generally good, the second point so-so (we will not deal with it and only plot data for 4 countries), and the last one is particularly ugly. To deal with the last one, we basically need to transform the strings like `X1.22.20` into a recognizable format like `2022-01-22`. In general, this can be done via `as.Date()`.
+
+But here, the minimal thing we have to do manually is to get rid of the `X` at the beginning of every string. Instead of figuring out whether the rest can be done implicitly by `as.Date()`, let us write a function below to transform the strings into a recognizable format ourselves. (We still need to use `as.Date()` though to change the object clas from `chr` to `Date`, which can be used for ploting).
+
+```{r}
+formatDate <- function(dates){
+  res <- c() # input is a vector of chars like `X1.22.20`, the output will be a vector as well
+  for(i in 1:length(dates)){
+    splited <- strsplit(dates[i], "[.]") # split the string by the dots
+    splited <- splited[[1]] # get rid of an empty dimension
+    splited[1] <- substr(splited[1],2,nchar(splited)) # drop `X` from the beginning
+    splited[3] <- paste("20",splited[3],sep="") # add 20.. to the year values
+    res[i] <- paste(splited[3],splited[1],splited[2],sep="-") # combine year-month-day
+  }
+  return(as.Date(res))
+}
+
+covid %>% 
+  filter(Country.Region %in% c("Czechia","Germany","Italy","Switzerland")) %>%
+  pivot_longer(c(-Country.Region,-Province.State,-Lat,-Long)) %>%
+  mutate(date=formatDate(name)) %>%
+  ggplot(aes(x=date, y=value, colour=Country.Region)) +
+    geom_line() +
+    ggtitle("Cumulative no. of covid cases.")
+```
+
+## 3.6 Marginal Scatterplots with Regression Lines and Outliers
+
+When we learned in Supplement_03 that there are some outliers and leverage points in our data, wouldn't it be nice to add these into the marginal scatterplots directly to see which scatter points belong to the outliers?
+
+Firstly, If we wish to have scatterplots with the response variable `involact` on the y-axes (like we did in Supplement_03 again), we naturally need one more column with `involact` values in the long format. This is actually done automatically by dropping `involact` from pivoting.
+
+```{r}
+chredlin %>% mutate(side = as.numeric(side), income=log(income)) %>% 
+  pivot_longer(-involact) %>%
+  ggplot(aes(y = involact, x = value)) + facet_wrap(~ name, scales = "free") +
+  geom_point() + stat_smooth(method=lm)
+```
+
+Secondly, let's denote the outliers. We'll use the second extra-variable approach (as opposed to the over-plotting approach). We create an additional variable which tells us, which of the observations are outliers.
+
+```{r}
+outliers <- I(1:nrow(chredlin) %in% c(3,6,35))
+leverage_pts <- I(1:nrow(chredlin) %in% c(7,24))
+chredlin <- chredlin %>%
+  mutate(out_lev =  as.factor(outliers + 2*leverage_pts))
+levels(chredlin$out_lev) <- c("normal obs", "outlier", "leverage point")
+
+chredlin %>% mutate(side = as.numeric(side), income=log(income)) %>% 
+  pivot_longer(cols=c(-involact, -out_lev)) %>%
+  ggplot() + facet_wrap(~ name, scales = "free") +
+  geom_point(mapping = aes(y = involact, x = value, color = out_lev)) +
+  stat_smooth(mapping = aes(y = involact, x = value), method=lm)
+```
+
+# References
+
+Wickham & Grolemund (2016) [R for data science](https://r4ds.had.co.nz/)
+
+Faraway (2016) Linear Models with R (2nd Edition)
+
+
+
+
+
+
+
+
+

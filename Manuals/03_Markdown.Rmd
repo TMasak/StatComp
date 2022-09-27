@@ -54,6 +54,10 @@ can be used in Markdown. However, it can be a bit tricky to debug your Latex cod
 All the materials created for this course (including this HTML) are written in Markdown.
 In the GitHub repo of the course, the source `.Rmd` files are available. Feel free to use these as learning materials to pick up Markdown.
 
-
-
+*Note*: If you want to run all chunks of the code in an `.Rmd`, run in console
+```
+library(knitr)
+knit('path_to_the_rmd_file/file_name.Rmd')
+```
+And if you only want to run the code up to a certain point in the `.Rmd` file, add `stop('here')` inside a code chunk exactly where you want to stop.
 
