@@ -18,8 +18,7 @@ includes:
     i.e. lecture notes, the basis for the slides,
     -   not available for Weeks 1 and 3
     -   preliminary form available in advance (until the end of the
-        semester) for the convenience of students unsure about enrolling
-        this course
+        semester)
 -   [Manuals](https://github.com/TMasak/StatComp/tree/master/Manuals) on
     specific topics.
     -   mostly for the first couple of weeks
