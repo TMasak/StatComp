@@ -1,0 +1,509 @@
+---
+title: "Bootstrap"
+output:
+  html_document:
+    toc: true
+header-includes:
+  - \newcommand{\E}{\mathbb{E}}
+  - \newcommand{\R}{\mathbb{R}}
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Introduction
+
+The primary goal of statistics is to extract information about a population (described by the distribution function $F$) based on a random sample $\mathcal{X} = \{ X_1,\ldots,X_N \}$ from this population. More often than not, one is interested in a particular characteristic of the population denoted generally by $\theta = \theta(F)$.
+
+**Running Ex.:** The mean $\theta = \E X_1 = \int x d F(x)$. [$\Delta$]{style="float:right"}
+
+Still, let us focus generally on $F$ rather than specifically on $\theta$. We can estimate $F$
+
+* parametrically, if we are willing to assume that $F \in \{ F_\lambda \mid \lambda \in \Lambda \subset \R^p \}$ for some integer $p$, we can take $\widehat{F} = F_{\widehat{\lambda}}$ for an $\widehat{\lambda}$ estimator of the parameter vector $\lambda$, or
+* non-parametrically by the empirical distribution function
+\[
+\widehat{F}_N(x) = \frac{1}{N} \sum_{n=1}^N I(X_n \leq x)
+\]
+
+```{R,out.width="40%", fig.show="hold"}
+edf_plot <- function(N){
+  X <- rnorm(N)
+  EDF <- ecdf(X)
+  plot(EDF)
+  x <- seq(-4,4,by=0.01)
+  points(x,pnorm(x),type="l",col="red")
+}
+set.seed(517)
+edf_plot(12)
+edf_plot(50)
+```
+
+**Running Ex.:** The empirical estimator of the mean is exactly the mean of the empirical distribution $\widehat{\theta} := \frac{1}{N} \sum_{n=1}^N X_n = \int x d \widehat{F}_N(x)$. [$\Delta$]{style="float:right"}
+
+In both cases, the population characteristic of interest $\theta = \theta(F)$ can often be estimated by the corresponding sample characteristic of $\widehat{\theta} = \theta(\widehat{F})$. The sample characteristic is called a *statistic*, and it has a *sampling distribution*. Sometimes the *statistic* of interest can be a scaled version of the sample characteristic.
+
+**Running Ex.:** For $F$ a distribution function of the Gaussian distribution with variance $\sigma^2$, $\widehat{\theta} \sim \mathcal{N}(\theta,\frac{\sigma^2}{N})$, which is the sampling distribution. [$\Delta$]{style="float:right"}
+
+We are rarely ever interested only in a point estimator of $\theta$: most statistical procedures require some knowledge of the sampling distribution. For example, confidence intervals for $\theta$ or tests of hypotheses about $\theta$ require knowledge of quantiles of the sampling distribution. And even in the case of point estimation, we may be interested in the estimator's bias, variance, or jointly its mean squared error. Those are all characteristics of the sampling distribution.
+
+While the sampling distribution is generally unknown (it can be found and worked with analytically in simple cases only, like in our running example, in other cases it has to be approximated by the CLT), it is identified by the underlying $F$ and the sampling process. The *bootstrap* embraces the **idea** that a (re)sampling process from $\widehat{F}$ can mimic the sampling process from $F$ itself that has produced the data. But since $\widehat{F}$ is known, the characteristics of the resampling distribution (which will in turn serve as proxies for the characteristics of the sampling distribution) are more readily available. Consider the following diagram
+\[
+\begin{eqnarray}
+\text{Sampling (real world):} \quad & F &\Longrightarrow X_1,\ldots,X_N &\Longrightarrow \theta = \widehat{\theta}(\widehat{F}_N) \\
+\text{Resampling (bootstrap world):} \quad & \widehat{F}_N &\Longrightarrow X_1^\star,\ldots,X_N^\star &\Longrightarrow \widehat{\theta}^\star = \theta(\widehat{F}_N^\star)
+\end{eqnarray}
+\]
+The bootstrap idea is that the bootstrap world can serve as a proxy for the real world. The advantage of the bootstrap world is that it is ours to control. Moreover, approximating the sampling process by resampling (i.e. performing *bootstrap*) can sometimes have further benefits.
+
+<a name="running_ex"></a>
+**Running Ex.:** Assume we are looking for a one-sided CI $[\widehat{\theta}(\alpha),\infty)$ with coverage $1-\alpha$, that is we search for $\widehat{\theta}_\alpha$ such that $P( \theta \leq \widehat{\theta}(\alpha)) = \alpha$. We know that
+\[
+T = \sqrt{N}\frac{\bar{X}_N - \theta}{\widehat{\sigma}} \sim t_{n-1} \quad \Rightarrow \quad P(T \leq t_{n-1}(\alpha)) = \alpha
+\]
+and so we get a CI with exact coverage by expressing $\theta$ from the inequality $T \leq t_{n-1}(\alpha)$:
+\[
+\theta \leq \bar{X}_N - \frac{\widehat{\sigma}}{\sqrt{N}} t_{n-1}(\alpha) =: \widehat{\theta}(\alpha).
+\]
+When the Gaussianity assumption is taken away, i.e. when we only assume $X_1,\ldots,X_N$ are i.i.d. with $\E X_1^2 < \infty$, we have from the CLT that $T \stackrel{d}{\to} \mathcal{N}(0,1)$ and thus
+\[
+P( \theta \leq \widehat{\theta}(\alpha)) \approx \alpha \quad \text{for}\quad \widehat{\theta}(\alpha) = \frac{\widehat{\sigma}}{\sqrt{N}} z(\alpha),
+\]
+where $z(\alpha)$ is the $\alpha$-quantile of the standard Gaussian. By the [Berry-Essen theorem](https://en.wikipedia.org/wiki/Berry%E2%80%93Esseen_theorem):
+\[
+P( T \leq x) - P( \mathcal{N}(0,1) \leq x) = \mathcal{O}\left({\frac{1}{\sqrt{N}}}\right) \quad \text{for all } x \quad \Rightarrow \quad
+P( \theta \leq \widehat{\theta}(\alpha)) = \alpha + \mathcal{O}\left({\frac{1}{\sqrt{N}}}\right).
+\]
+That is, the coverage of the asymptotic CI is exact up to the order $\mathcal{O}(N^{-1/2})$.
+
+Now consider the bootstrap version of the CI. Let $X_1^\star,\ldots,X_N^\star$ be i.i.d. from the empirical distribution $\widehat{F}_N$ obtained from $X_1,\ldots,X_N$ i.i.d. with $\E X_1^2 < \infty$. Then it can be shown using Edgeworth expansions that
+\[
+P_F(T \leq x) = \Phi(x) + \frac{1}{\sqrt{N}} a(x) \phi(x) + \mathcal{O}\left( \frac{1}{N} \right)
+\]
+for all $x \in \R$ and and $\Phi$ and $\phi$ being respectively the distribution function and the density of the standard Gaussian, while the bootstrap version satisfies
+\[
+P_{\widehat{F}_N}(T^\star_1 \leq x) = \Phi(x) + \frac{1}{\sqrt{N}} \widehat{a}(x) \phi(x) + \mathcal{O}\left( \frac{1}{N} \right),
+\]
+where $\widehat{a}(x) - a(x) = \mathcal{O}(N^{-1/2})$. Hence
+\begin{equation}\label{eq:boot_rate}\tag{1}
+P_{\widehat{F}_N}(T^\star_1 \leq x) - P_F(T \leq x) = \mathcal{O}\left( \frac{1}{N} \right) \quad \Rightarrow \quad P\left(\theta \leq \bar{X}_N - \frac{\widehat{\sigma}}{\sqrt{N}} q^\star(\alpha) =: \widehat{\theta}^\star(\alpha) \right) = \alpha + \mathcal{O}\left( \frac{1}{N} \right),
+\end{equation}
+i.e. the bootstrap interval has exact coverage up to the order $\mathcal{O}(N^{-1})$!
+
+The previous implication probably requires some more justification though. $T$ has a sampling distribution inherited from $F$, let $q(\alpha)$ be its $\alpha$-quantile. Then naturally
+\[
+P(T \leq q(\alpha)) = \alpha \quad \Rightarrow \quad P\left(\theta \leq \bar{X}_N - \frac{\widehat{\sigma}}{\sqrt{N}} q(\alpha)\right) = \alpha,
+\]
+but the problem is we do not know the sampling distribution, and hence neither its quantiles. If we use asymptotic normality, we approximate the quantile as the corresponding Gaussian quantile, but we commit a certain error. The bootstrap alternative instead tries to approximate the unknown sampling distribution more directly by the distribution of $T^\star_1 = \sqrt{N}\frac{\bar{X}_N^\star - \bar{X}_N}{\widehat{\sigma}^\star}$, where $\bar{X}_N^\star$ and $\widehat{\sigma}^\star$ are calculated from the bootstrap sample $X_1^\star,\ldots,X_N^\star$. $T^\star_1$ also has a sampling distribution (inherited from $\widehat{F}_N$), let $q^\star(\alpha)$ be its $\alpha$-quantile. Then $P(T^\star_1 \leq q^\star(\alpha)) = \alpha$, and according to the LHS of \eqref{eq:boot_rate} we only commit error of order $\mathcal{O}(N^{-1})$ when we replace $T^\star_1$ by $T$, which then yields the RHS of \eqref{eq:boot_rate}. [$\Delta$]{style="float:right"}
+
+<a name="bias_ex"></a>
+**Example:** Assume $X_1,\ldots,X_N$ are i.i.d. with $\E |X_1|^3 < \infty$ and $\E X_1 = \mu$, and let $\theta = \mu^3$. In the same spirit to the running example above, the empirical estimator of $\theta$ is $\widehat{\theta} = (\bar{X}_N)^3$, which is biased:
+$b := \text{bias}(\widehat{\theta}) = \E \widehat{\theta} - \theta$.
+We can use the bootstrap to estimate the bias $b$ as $\widehat{b}^\star$ and define a bias-corrected estimator as $\widehat{\theta}_b^\star = \widehat{\theta} - \widehat{b}^\star$. Let us do just that.
+
+In this case, the bias can actually be calculated explicitly:
+\[
+\E \widehat{\theta} = \E \bar{X}_N^3 = \E\big[ \mu + N^{-1} \sum_{n=1}^N(X_n - \mu) \big]^3 = \mu^3 + \underbrace{N^{-1} 3 \mu \sigma^2 + N^{-2} \gamma}_{=b},
+\]
+where $\sigma^2 = \E(X_1-\mu)^2$ and $\gamma = \E(X_1-\mu)^3$. For the bootstrap version, we have
+\[
+\E_{\widehat{F}_N} \widehat{\theta}^\star = \E_{\widehat{F}_N} (\bar{X}_N^\star)^3 = \E_{\widehat{F}_N} \big[ \bar{X}_N + N^{-1} \sum_{n=1}^N(X_n^\star - \bar{X}_N) \big]^3 = \bar{X}_N^3 + \underbrace{N^{-1} 3 \bar{X}_N \widehat{\sigma}^2 + N^{-2} \widehat{\gamma}}_{=\widehat{b}^\star},
+\]
+where $\widehat \sigma^2 = N^{-1} \sum_n (X_n - \bar{X}_N)^2$ and $\widehat \gamma = N^{-1} \sum_n (X_n - \bar{X}_N)^3$.
+
+Now, for $\widehat{\theta}_b^\star = \widehat{\theta} - \widehat{b}^\star = \bar{X}_N^3 - N^{-1} 3 \bar{X}_N \widehat{\sigma}^2 - N^{-2} \widehat{\gamma}$ we have
+\[
+\E \widehat{\theta}_b^\star = \mu^3 + N^{-1} 3 \big[ \mu \sigma^2 - \E \bar{X}_N \widehat{\sigma}^2 \big] + N^{-2} \big[ \gamma - \E \widehat{\gamma} \big].
+\]
+
+At this point, there are several ways to argue that the bias has been decreased (but all of them are a bit painful). For example, it can be calculated explicitly that $\E \bar{X}_N \widehat{\sigma}^2 = \mu \sigma^2 + \mathcal{O}(N^{-1})$ and $\E \widehat{\gamma} = \gamma + \mathcal{O}(N^{-1})$, and hence $\text{bias}(\widehat{\theta}_b^\star) = \mathcal{O}(N^{-2})$ as opposed to $\text{bias}(\widehat{\theta}) = \mathcal{O}(N^{-1})$. Thus, using bootstrap, we have successfully reduced the bias by the full order of the sample size. [$\Delta$]{style="float:right"}
+
+In the examples above, we saw how resampling can be used to construct confidence intervals with better coverage compared to those obtained using CLT, and how the resampling distribution can be used to partially correct the bias of an estimator.
+Of course, the second example is special in that it allows for explicit calculations, while explicit calculation of $q^\star(\alpha)$ is not possible. Nonetheless, the bootstrap can be naturally paired up with Monte Carlo in such situations.
+
+We have already seen how basic Monte Carlo can help us avoid analytic calculations and perform numerous statistical tasks. However, the cases in which the distribution under the null is fully known (like in [this example](09_MonteCarlo.html#MC_ex)) are quite rare. In many more cases, the distribution under the null is unknown, but can be approximated by the bootstrap idea above, and Monte Carlo can then be used to approximate desirable characteristics of such a distribution. From this point of view, by "bootstrap" it is commonly meant to combine
+
+* the plug-in principle (i.e. estimating the unknowns), and
+* Monte Carlo principle (i.e. simulation instead of analytic calculations).
+
+The former amounts to estimating either
+
+* some parameters in the parametric problems $\Longrightarrow$ *parametric bootstrap*, or
+* the whole $F$ via the empirical estimator $\widehat{F}_N$ in non-parametric problems $\Longrightarrow$ *(standard/non-parametric) bootstrap*.
+
+# The (Standard/Non-parametric) Bootstrap
+
+* let $\mathcal{X} = \{ X_1,\ldots,X_N \}$ be a random sample from $F$
+* we are interested in $\theta = \theta(F)$, a characteristic of $F$
+* the estimator is given as $\widehat{\theta} = \theta(\widehat{F})$
+  - we will also write $\widehat{\theta} = \theta[\mathcal{X}]$, since $\widehat{F}$ and thus the estimator depend on the sample
+  - $\widehat{F}$ can be either a parametric on non-parametric estimate
+* the distribution of a scaled estimator $T = g(\widehat{\theta},\theta) = g(\theta[\mathcal{X}],\theta)$ is of interest
+  - e.g. $T = \sqrt{N}(\widehat{\theta}, \theta)$
+
+The workflow of the bootstrap is as follows for some $B \in \mathbb{N}$ (e.g. $B=1000$): 
+\[
+\begin{eqnarray}
+\text{Data}\qquad & & \qquad\qquad\text{Resamples} \\
+\mathcal{X} = \{ X_1,\ldots,X_N \} &\quad \Longrightarrow \quad& \begin{cases}
+\quad\mathcal{X}_1^\star = \{ X_{1,1}^\star,\ldots,X_{1,N}^\star \} \quad \Longrightarrow \quad T_1^\star = g(\theta[\mathcal{X}_1^\star],\theta) \\
+\quad\qquad\vdots \\
+\quad\mathcal{X}_B^\star = \{ X_{B,1}^\star,\ldots,X_{B,N}^\star \} \;\;\Longrightarrow \quad T_B^\star = g(\theta[\mathcal{X}_B^\star],\theta)
+\end{cases}
+\end{eqnarray}
+\]
+and estimate the unknown distribution $F_T(x) = P(T \leq x)$ by the empirical distribution of $T_1^\star,\ldots, T_B^\star$, i.e. by
+\[
+\widehat{F}_{T,B}^\star(x) = \frac{1}{B}\sum_{b=1}^B I(T_b^\star \leq x).
+\]
+Any characteristic of $F_T$ can be estimated by the corresponding characteristic of $\widehat{F}_{T,B}^\star$
+
+For example, the quantiles $q^\star(\alpha)$ in [the running example above](#running_ex) can be approaximated by the quantiles of this empirical distribution.
+
+*Note:* The bootstrap resamples are obtained by sampling with replacement from the data $X_1,\ldots,X_N$. But there is a natural question: how large the number of resamples $B$ should be? That depends on the characteristic of interest. To approximate quantiles, at least $B=1000$, but rather $B=1000$, is advisable, while to estimate the variance, $B=100$ is usually deemed enough.
+
+## Some Theory
+
+Any statistical methodology should be at least consistent. If we have consistency, we may ask for rates of convergence, like sketched in [the example above](#running_ex). But with bootstrap, theoretical research is hard, things have to shown again for different kinds of statistics. Here we will only provide a consistency result for the case of bootstrapping a smooth transformation of the empirical mean.
+
+Recall that we are using the empirical bootstrap distribution $\widehat{F}_{T,B}^\star$ as a proxy to the unknown distribution of the scaled estimator $T$, denoted by $F_T(x) = P(T \leq x)$. As we increase the number of bootstrap samples, $\widehat{F}_{T,B}^\star$ naturally approaches $F_T^\star(x) = P(T_1^\star \leq x)$. In fact, by the [Glivenko-Cantelli theorem](https://en.wikipedia.org/wiki/Glivenko%E2%80%93Cantelli_theorem):
+\[
+\sup_{x} \Big| \widehat{F}_{T,B}^\star(x) - F_T^\star(x) \Big| \overset{a.s.}{\to} 0 \quad \text{as} \quad B \to \infty.
+\]
+Hence the question is how does
+\[
+\sup_{x} \Big| F_T^\star(x) - F_T(x) \Big|
+\]
+behave as $B \to \infty$.
+
+**Theorem.** Let $\E X_1^2 < \infty$ and $T = h(\bar{X}_N)$, where $h$ is continuously differentiable at $\mu := \E X_1$ and such that $h(\mu) \neq 0$. Then
+\[
+\sup_{x} \Big| F_T^\star(x) - F_T(x) \Big| \overset{a.s.}{\to} 0 \quad \text{as} \quad B \to \infty.
+\]
+
+The previous theorem shows consistency of the bootstrap or smooth transformations of the empirical average. It also holds for random vectors, where $h : \R^p \to \R^q$ where has continuous partial derivatives on some neighborhood of $\mu$.
+
+## Applications
+
+Here, we will demonstrate how to device bootstrap procedures for standard statistical tasks. We will not prove validity of those procedures (i.e. we will not show that bootstrap works).
+
+### Confidence Intervals
+
+Let $T = \sqrt{N}(\widehat{\theta} - \theta)$ where $\theta \in \R$, thus $T^\star_b = \sqrt{N}(\widehat{\theta}_b^\star - \widehat{\theta})$ for $b=1,\ldots,B$. We can take $q_B^\star(\alpha)$ for $\alpha \in (0,1)$ to be the $\alpha$-quantile of the empirical distribution based on $T^\star_b$ for $b=1,\ldots,B$. Provided that *bootstrap works*, we have
+\[
+P\Big(q_B^\star(\alpha/2) \leq \sqrt{N}(\widehat{\theta} - \theta) \leq q_B^\star(1-\alpha/2) \Big) \to 1-\alpha
+\]
+and hence
+\[
+\left( \widehat{\theta} - \frac{q_B^\star(1-\alpha/2)}{\sqrt{N}}, \widehat{\theta} - \frac{q_B^\star(\alpha/2)}{\sqrt{N}} \right)
+\]
+is a CI for $\theta$ with asymptotically correct coverage (again, provided that *bootstrap works*).
+
+Note that the interval above is different from the one we worked with in our running example above, where we have standardized for the scale. This is called *studentization* and it is highly recommended. It can often be shown that bootstrap procedures based on studentized statistics have better properties. For example, in the running example above we have seen that the studentized CI had a faster rate of convergence (to the correct coverage) than the CI based on asymptotic normality. This would not happen without studentization. So let's change the basic CI above into a studentized CI.
+
+Assume that $\sqrt{N}(\widehat{\theta} - \theta) \to \mathcal{N}(0,v^2)$, i.e. $v^2$ is the asymptotic variance of $T$. Let $\widehat{v}$ be a consistent estimator for $v$. Now we consider the studentized statistics:
+\[
+T = \sqrt{N}\frac{\widehat{\theta} - \theta}{\widehat{v}} \qquad \& \qquad
+T^\star_b = \sqrt{N}\frac{\widehat{\theta}_b^\star - \widehat{\theta}}{\widehat{v}^\star_b}
+\]
+where $\widehat{v}^\star_b$ is the estimator of the same form as $\widehat{v}$, but calculated from the $b$-th resample $\mathcal{X}^\star_b$. Again, let $q_B^\star(\alpha)$ for $\alpha \in (0,1)$ be the $\alpha$-quantile of the empirical distribution based on $T^\star_b$ for $b=1,\ldots,B$. If bootstrap works, we have now
+\[
+P\Big(q_B^\star(\alpha/2) \leq \sqrt{N}\frac{\widehat{\theta} - \theta}{\widehat{v}} \leq q_B^\star(1-\alpha/2) \Big) \to 1-\alpha
+\]
+from which we get the CI with asymptotically correct coverage:
+\[
+\left( \widehat{\theta} - \frac{q_B^\star(1-\alpha/2)}{\sqrt{N}}\widehat{v}, \widehat{\theta} - \frac{q_B^\star(\alpha/2)}{\sqrt{N}} \widehat{v}\right)
+\]
+
+This weeks assignment for you is to probe via simulations whether bootstrap works in these cases.
+
+### Variance Estimation
+
+We often know that
+\[
+\sqrt{N}(\widehat{\theta} - \theta) \stackrel{d}{\to} \mathcal{N_p}(0, \Sigma),
+\]
+but in these cases $\Sigma$ often has a complicated form (e.g. it has a complicated dependency on unknown parameters).
+
+But the bootstrap can be deployed quite easily:
+\[
+\widehat{\Sigma}^\star = \frac{1}{B-1} \sum_{b=1}^B \left( \widehat{\theta}^\star_b - \bar{\theta}^\star \right) \left( \widehat{\theta}^\star_b - \bar{\theta}^\star \right)^\top, \qquad \text{where} \qquad
+\bar{\theta}^\star = \frac{1}{B}\sum_{b=1}^B \widehat{\theta}^\star_b,
+\]
+where $\widehat{\theta}^\star_b$ is the same estimator as $\widehat{\theta}$, only calculated from the $b$-th bootstrap resample.
+
+Note that $\widehat{\Sigma}^\star$ is an estimator of $N^{-1} \Sigma$, not just of $\Sigma$. Critically, the bootstrap will fail if $\mathrm{var}(\widehat{\theta}) = \infty$, which can actually happen even when the asymptotic normality holds.
+
+**Example:** Let $X_1,\ldots,X_N$ be a random sample from the density $f(x) = 3/4^4 I(x \geq 1)$. From the CLT we have $\sqrt{N}(\bar{X}_N - 3/2) \to \mathcal{N}(0,3/4)$. Taking $g(x) = \exp(x^4)$, the delta-theorem gives us
+\[
+\sqrt{N}\Big( g\big( \bar{X}_n - \big) - g(3/2) \Big) \to \mathcal{N}\big(0,[g'(3/2)]^2 3/4 \big)
+\]
+But the bootstrap will not work in this case, since even $\E g\big( \bar{X}_n \big) = \infty$, see the code below.
+
+```{R,out.width="50%"}
+x <- 1+log(1+(0:1000)/10)
+target_d <- function(x){
+  return(3/x^4)
+}
+plot(x,target_d(x),type="l")
+x <- (1:6000)/1001
+proposal_d <- dcauchy(x)
+points(1+x,2*proposal_d,type="l",col="red")
+const <- 3/1^4 / (2*dcauchy(0)) # 4.7
+
+# rejection sampling from the target
+set.seed(317)
+N <- 1000
+X <- rep(0,N)
+j <- 0
+while(j < N){
+  Y <- 1+abs(rcauchy(1))
+  U <- runif(1)
+  if(U < target_d(Y)/dcauchy(Y)/const){
+    X[j+1] <- Y
+    j <- j+1
+  }
+}
+hist(X,breaks=16,freq=F)
+points(x,target_d(x),type="l")
+
+# bootstrap estimator of the variance
+B <- 1000
+boot_stat <- rep(0,B)
+for(b in 1:B){
+  Xb <- sample(X,N,replace=T)
+  boot_stat[b] <- exp(mean(Xb)^4)
+}
+(sigma_star <- 1/(B-1)*sum((boot_stat-mean(boot_stat))^2)) # overshot
+
+(4*exp(1.5^4)*1.5^3)^2*3/4/N # true asymptotic variance we wish to estimate
+```
+
+### Bias Reduction
+
+Unbiased estimators may be common during Stats 101 exercises, but in reality they are quite rare. But we can estimate the bias by bootstrapping as $\widehat{b}^\star = \bar{\theta}^\star - \widehat{\theta}$ and define the bias-corrected estimator $\widehat{\theta}_b = \widehat{\theta} - \widehat{b}^\star$.
+
+We have seen in [an example above](#bias_ex) that the bias-corrected estimator can have better properties. In that example, we tried to estimate $g(\E X_1)$ for $g(x) = x^3$ by $g(\bar{X}_N)$, and we got a faster rate for the bias of the bias-corrected estimator. Something similar happens when working with any smooth enough $g$ instead.
+
+### Hypothesis Testing
+
+Assume we wish to test a hypothesis $H_0$ using a statistic $T$. Depending on the form of the alternative $H_1$, either
+
+* large values of $T$,
+* small values of $T$, or
+* both large and small values of $T$
+
+testify against the hypothesis and in favor of the alternative. Bootstrapping the statistic, we obtain $T_1^\star, \ldots, T_B^\star$ and depending on what values of the statistics testify against the hypothesis, we can estimate the p-value as either
+
+* $\widehat{\text{p-val}} = \frac{1}{B+1} \left( 1 + \sum_{b=1}^B I(T_b^\star \geq T) \right)$,
+* $\widehat{\text{p-val}} = \frac{1}{B+1} \left( 1 + \sum_{b=1}^B I(T_b^\star \leq T) \right)$, or
+* $\widehat{\text{p-val}} = \frac{1}{B+1} \left( 1 + \sum_{b=1}^B I(|T_b^\star| \geq |T|) \right)$.
+
+If the statistic $T$ is not too extreme (the form of $H_1$ decides what "extreme" is), we will observe more extreme values coming out of our bootstrap, which in turn increases our estimate of the p-value, which in turn prevents us from rejecting $H_0$.
+
+**Example:** Let $X_1,\ldots,X_N$ be a random sample with $\E X_1^2 < \infty$ and consider $H_0: \mu = \mu_0$ against
+
+* $H_1: \mu > \mu_0$. Taking the studentized statistic $T = \sqrt{N}(\bar{X}_N - \mu_0)/s$ for $s = (N-1)^{-1} \sum_n (X_n - \bar{X}_N)^2$ and the corresponding bootstrap statistics $T_b^\star = \sqrt{N}(\bar{X}_b^\star - \bar{X}_N)/s^\star$, the bootstrap p-value is
+\[
+\widehat{\text{p-val}} = \frac{1}{B+1} \left( 1 + \sum_{b=1}^B I(T_b^\star \geq T) \right).
+\]
+```{R}
+set.seed(517)
+N <- 100
+X <- rexp(N,1/2) # thus true mean = 2
+mu_0 <- 1.8 # hypothesized value, alternative is TRUE
+T_stat <- (mean(X)-mu_0)/sd(X)*sqrt(N)
+B <- 10000
+boot_stat <- rep(0,B)
+for(b in 1:B){
+  Xb <- sample(X,N,replace=T)
+  boot_stat[b] <- (mean(Xb)-mean(X))/sd(Xb)*sqrt(N)
+}
+( p_val <- sum(boot_stat > T_stat)/(B+1) )
+
+I(abs(T_stat) > qnorm(0.95)) # asymptotic test, easy to calculate asymptotic p-val
+```
+Notice that while bootstrap rejects the hypothesis on 5 % level, the test based on asymptotic normality does not. This could be expected, since we saw in our [running example](#running_ex) above that bootstrap produces better one-sided CIs, which are naturally dual to one-sided hypothesis tests. On the other hand, it can be shown that in the case of two-sided CIs and two-sided tests the asymptotic behavior of asymptotic normality is better, matching the bootstrap rates, and hence bootstrap is not expected to outperform the asymptotic test. As shown below, it is in fact the other way around. Note that we reduce the value of $\mu_0$ below to gain more power, since it is naturally harder to reject against the two-sided alternative.
+
+* $H_1: \mu \neq \mu_0$. Taking the same studentized statistics, the bootstrap p-value is this time
+\[
+\widehat{\text{p-val}} = \frac{1}{B+1} \left( 1 + \sum_{b=1}^B I(|T_b^\star| \geq |T|) \right).
+\]
+
+```{R}
+set.seed(517)
+N <- 100
+X <- rexp(N,1/2) # thus true mean = 2
+mu_0 <- 1.7 # reduced, since harder to reject here
+T_stat <- (mean(X)-mu_0)/sd(X)*sqrt(N)
+B <- 10000
+boot_stat <- rep(0,B)
+for(b in 1:B){
+  Xb <- sample(X,N,replace=T)
+  boot_stat[b] <- (mean(Xb)-mean(X))/sd(Xb)*sqrt(N)
+}
+( p_val <- sum(abs(boot_stat) > abs(T_stat))/(B+1) )
+
+I(abs(T_stat) > qnorm(0.95)) # asymptotic test, easy to calculate asymptotic p-val
+```
+
+# Related Methods
+
+## Parametric Bootstrap and Goodness-of-Fit Testing
+
+Assume that $X_1,\ldots,X_N$ is a random sample from $F = F_\gamma$, i.e. the distribution function is known up to a parameter $\lambda \in \R^p$. The parametric bootstrap is similar to the non-parametric one, only instead of sampling with replacement from $X_1,\ldots,X_N$ we sample from the fitted distribution $F_\widehat{\lambda}$, where $\widehat{\lambda}$ is a consistent estimator of $\lambda$.
+
+Parametric bootstrap is mainly useful for Goodness-of-Fit (GoF) testing, that is the following problem: assume $X_1,\ldots,X_N$ is a random sample from a general $F$, and for a parametric model $\mathcal{F} = \{ F_\lambda \mid \lambda \in \Lambda \}$, we would like to test whether the data supports the hypothesis that $F$ belongs to this parametric family:
+\[
+H_0: F \in \mathcal{F}, \qquad H_1: F \notin \mathcal{F}.
+\]
+
+The standard approach is to use the Kolmogorov-Smirnov statistic
+\[
+T = \sup_x \Big| \widehat{F}_N(x) - F_\widehat{\lambda}(x) \Big|,
+\]
+where $\widehat{\lambda}$ is a specific estimator consistent under the parametric model $H_0$ (e.g. the MLE).
+
+But here we are not comparing the empirical distribution to a fixed reference like in the usual [Kolmogorov-Smirnov test](https://en.wikipedia.org/wiki/Kolmogorov%E2%80%93Smirnov_test), instead we compare the non-parametric fit to the parametric fit. Hence the distribution of $T$ is complicated, but doing parametric bootstrap is easy:
+
+* **for** $b=1,\ldots,B$ 
+  - generate resample $\mathcal{X}_b^\star = \{ X_{b,1}^\star,\ldots,X_{b,N}^\star \}$
+  - estimate $\widehat{\lambda}_b^\star$ from the resample $\mathcal{X}_b^\star$
+  - calculate the EDF $\widehat{F}_{N,b}^\star$ from the resample $\mathcal{X}_b^\star$
+  - set $T_b^\star = \sup_x \Big| \widehat{F}_{N,b}^\star(x) - F_{\widehat{\lambda}_b^\star}(x) \Big|$
+* estimate the p-value of the test by
+\[
+\widehat{\text{p-val}} = \frac{1}{B+1}\left( 1 + \sum_{b=1}^B I(T_b^\star \geq T) \right)
+\]
+
+## Iterated Bootstrap
+
+As we have seen in [an example above](#bias_ex), the bootstrap can be used to estimate the bias $b$ of an estimator by $\widehat{b}^\star$, and the estimator of the bias can be in turn used to correct the estimator. But in that example, the bias-corrected estimator $\widehat{\theta}_b^\star$ is still biased (just the asymptotic order of the bias has been lowered), which means that the estimator of the bias $\widehat{b}^\star$ is itself biased. How about we iterate the bootstrap idea, and use another bootstrap to estimate the bias of $\widehat{b}^\star$? Then we can adjust the estimator $\widehat{\theta}_b^\star$ even further and hopefully reduce its bias even further (i.e. lower the asymptotic order of the bias even more).
+
+In the following scheme, the double star denotes the double bootstrap estimate
+\[
+\begin{eqnarray}
+\text{Estimator:} \quad&\quad \widehat{\theta} \quad&\quad \widehat{b}^\star \quad&\quad \widehat{\theta} \quad&\quad \widehat{\theta} \quad&\quad \widehat{\theta} \\
+\text{Bias:} \quad&\quad \mathcal{O}(N^{-1}) \quad&\quad \mathcal{O}(N^{-1}) \quad&\quad \mathcal{O}(N^{-1}) \quad&\quad \mathcal{O}(N^{-1}) \quad&\quad \mathcal{O}(N^{-1})
+\end{eqnarray}
+\]
+
+**Example:** In this example, consider the estimator $\widehat{\tau} = N^{-1} \sum_{n} (X_n - \bar{X}_N)^2$ of the variance $\tau = \sigma^2 = \mathrm{var}{X_1}$. We know this estimator is biased, and we know that replacing $N^{-1}$ by $(N-1)^{-1}$ would make it unbiased, but let us show how the bootstrap can be used without the analytic knowledge (and use the analytic knowledge only to evaluate what the bootstrap does). The bias is $b=N^{-1} \tau$, and the bootstrap estimate of the bias is simply $\widehat{b}^\star = N^{-1} \widehat{\tau}$. Next, since $\mathrm{bias}(\widehat{\tau}) = \tau (N-1)/N$, we have
+\[
+\E \widehat{b}^\star = \frac{(N-1) \tau}{N^2} = b[1 + N^{-1}] \quad \Rightarrow \quad \text{bias}(\widehat{b}^\star) = N^{-1} b = N^{-2} \tau
+\]
+so $\widehat{b}^\star$ is unbiased up to order $N^{-1}$ for $b$. Iterating bootstrap for the second time, we have $N^{-2} \widehat{\tau}$ as the bootstrap estimator for the bias of $\widehat{b}^{\star}$, and the second-iteration estimator for $b$, i.e. for the bias of $\widehat{\tau}$ itself, is thus $\widehat{b}^{\star\star} = \widehat{b}^{\star} + N^{-2} \widehat{\tau}$. This is unbiased up to the order $N^{-2}$ for $b$:
+\[
+\E \widehat{b}^{\star\star} = \frac{(N-1) \tau}{N^2} + \frac{(N-1) \tau}{N^3} = \frac{\tau}{N}\left[ 1 - \frac{1}{N} + \frac{1}{N} - \frac{1}{N^2} \right] = b [1 + N^{-2}]
+\]
+
+The example above is again a toy example where bootstrap calculations can be performed analytically. But similar improvements can be observed even when analytic calculations are not possible. In that case, we need to apply a second-iteration bootstrap to every first-iteration bootstrap sample, i.e. generating $\mathcal{X}_{b,m}^{\star\star}$ for $m=1,\ldots,M$, for every $\mathcal{X}_{b}^{\star}$ where $b=1,\ldots,B$. This is of course computationally demanding. Thus while we could, in principle, iterate this idea to a three-iteration bootstrap an beyond, this would not be computationally feasible, and also the finite sample properties of the iterated bootstrap estimates may not show the improvements unless $N$ is very large. On the other hand, the iterated bootstrap can useful in many cases from the methodological viewpoint.
+
+<a name="test_var_ex"></a>
+**Example:** Let $X_1,\ldots,X_p \in \R^p$ be i.i.d. from a distribution depending on $\theta \in \R^p$. We are interested in testing $H_0: \theta = \theta_0$ against $H_1: \theta \neq \theta_0$. Let $\widehat{\theta}$ be an estimator such that $\sqrt{N}(\widehat{\theta} - \theta) \stackrel{d}{\to} \mathcal{N}(0, \Sigma)$. Let us perform a bootstrap test based on the studentized statistic
+\[
+T = \sqrt{N} \widehat{\Sigma}^{-1/2}(\widehat{\theta} - \theta_0) \stackrel{d}{\to} \mathcal{N}(0, I_{p\times p}) \qquad (\text{under } H_0),
+\]
+where $\widehat{\Sigma}$ is a consistent estimator of $\Sigma$. The asymptotic test can be based on the fact that $\| T \|^2 \stackrel{d}{\to} \chi^2_p$ under $H_0$. We have several options how bootstrap can come into play:
+
+* If we do not want to use the asymptotic distribution directly, we can use the standard bootstrap to perform the hypothesis test.
+* If the estimator for $\Sigma$ is not available, which is often the case, one can use the standard bootstrap to estimate $\Sigma$ and carry on with the asymptotic test (based on the $\chi^2_p$ distribution).
+* If we do not want to use the asymptotic distribution directly and the estimator for $\Sigma$ is not available, we can use double bootstrap to perform the test, as shown schematically below.
+
+\[
+\begin{eqnarray}
+\mathcal{X} = \{ X_1,\ldots,X_N \} &
+\left\{\begin{array}
+x\mathcal{X}_1^\star = \{ X_{1,1}^\star,\ldots,X_{1,N}^\star \}
+  &\left\{\begin{array}
+  x\mathcal{X}_{1,1}^{\star\star} = \{ X_{1,1,1}^{\star\star},\ldots,X_{1,1,N}^{\star\star} \} \\
+  \quad\qquad\vdots \\
+  \mathcal{X}_{1,M}^{\star\star} = \{ X_{1,M,1}^{\star\star},\ldots,X_{1,M,N}^{\star\star} \}
+  \end{array}\right\}
+  &\widehat{\Sigma}_1^{\star\star} \quad \Longrightarrow \quad T_1^\star \\
+&\qquad\qquad\vdots \\
+\quad\qquad\vdots&\qquad\qquad\vdots \\
+&\qquad\qquad\vdots \\
+\mathcal{X}_B^\star = \{ X_{B,1}^\star,\ldots,X_{B,N}^\star \} 
+  &\left\{\begin{array}
+  x\mathcal{X}_{B,1}^{\star\star} = \{ X_{B,1,1}^{\star\star},\ldots,X_{B,1,N}^{\star\star} \} \\
+  \quad\qquad\vdots \\
+  \mathcal{X}_{B,M}^{\star\star} = \{ X_{B,M,1}^{\star\star},\ldots,X_{B,M,N}^{\star\star} \}
+  \end{array}\right\}
+  &\widehat{\Sigma}_B^{\star\star} \quad \Longrightarrow \quad T_B^\star \\
+\end{array}\right\} \widehat{\text{p-val}}
+\end{eqnarray}
+\]
+where
+\[
+\begin{align}
+\widehat{\Sigma}_b^{\star\star} &= \frac{1}{M-1} \sum_{m=1}^M \left( \widehat{\theta}^{\star\star}_{b,m} - \bar{\theta}^{\star\star}_b \right) \left( \widehat{\theta}^{\star\star}_{b,m} - \bar{\theta}^{\star\star}_b \right)^\top, \quad \text{where} \quad \widehat{\theta}^{\star\star}_m = \theta\big[\mathcal{X}_{b,m}^{\star\star}\big] \quad \&\quad
+\bar{\theta}^{\star\star}_b = \frac{1}{B}\sum_{b=1}^B \widehat{\theta}^{\star\star}_{b,m} \,,\\
+T_b^\star &= \sqrt{N} \left( \widehat{\Sigma}_b^{\star\star} \right)^{-1/2} \left( \widehat{\theta}_b^\star - \widehat{\theta}\right), \\
+\widehat{\text{p-val}} &= \frac{1}{1+B} \left( 1 + \sum_{b=1}^B I\big(\| T^\star_b \| \geq \| T \|^2\big) \right), \\
+\end{align}
+\]
+
+## Jackknife
+
+The jackknife is a predecessor of the bootstrap that also shares some similarities with the bootstrap as well with cross-validation. It was originally proposed for bias estimation, and later (but still before bootstrap) for variance estimation. The idea is to recalculate an estimator many times, always leaving out one observation at a time from the data set.
+
+Let $X_1,\ldots,X_N$ be a random sample from a distribution depending on $\theta \in \R^p$. Let $\widehat{\theta} = \theta[X_1,\ldots,X_N]$ be an estimator of $\theta$ and let $\widehat{\theta}_{-n} = \theta[X_1,\ldots,X_{n-1},X_{n+1},\ldots,X_N]$ be the estimator calculated without the $j$-th observation. Consider $\bar{\theta} = N^{-1} \sum_n \widehat{\theta}_{-n}$.
+
+The jackknife estimator of the bias is
+\[
+\widehat{b} = (n-1)(\bar{\theta} - \widehat{\theta}),
+\]
+which has a similar form to the bootstrap estimator of the bias, but the $(n-1)$ factor is surprising at first glance. A heuristic justification for the factor is as follows. Assuming for simplicity that $p=1$ and that $b = \text{bias}(\widehat{\theta}) = a N^{-1} + b N^{-2} + \mathcal{O}(N^{-3})$ for some constants $a$ and $b$, we have
+\[
+\text{bias}(\widehat{\theta}_{-n}) = a (N-1)^{-1} + b (N-1)^{-2} + \mathcal{O}(N^{-3}) = \text{bias}(\bar{\theta}).
+\]
+Hence
+\[
+\begin{split}
+\E \widehat{b} &= (n-1)\big[\text{bias}(\bar{\theta}) - \text{bias}(\widehat{\theta}_{})\big] = (n-1)\left[ a \left( \frac{1}{N-1} - \frac{1}{N} \right) + \left( \frac{1}{(N-1)^2} - \frac{1}{N^2} \right) + \mathcal{O}\left(\frac{1}{N^3}\right)\right] \\&= a N^{-1} + b N^{-2} \frac{2N-1}{N-1} + \mathcal{O}(N^{-3})
+\end{split},
+\]
+so $\widehat{b}$ approximates $b$ correctly up to the order $N^{-2}$, which corresponds to the bootstrap. The bias-corrected estimator is then
+\[
+\widehat{\theta}_b^\star = \widehat{\theta} - \widehat{b} = N \widehat{\theta} - (N-1) \bar{\theta}.
+\]
+
+Tukey defined the pseudo-values
+\[
+\theta_{n}^\star = N \widehat{\theta} - (N-1) \widehat{\theta}_{-n}
+\]
+and conjectured that in some situations these can be treated as i.i.d. with approximately the same variance as $N \mathrm{var}(\widehat{\theta})$, and hence we can take
+\[
+\widehat{\mathrm{var}}(\widehat{\theta}) = \frac{1}{N}\frac{1}{N-1} \sum_{n=1}^N\left( \theta_{n}^\star - \bar{\theta}^\star \right) \left( \theta_{n}^\star - \bar{\theta}^\star \right)^\top.
+\]
+
+Similarly to bootstrap, the jackknife has its theoretical version which allows us to study when it works. Today, the jackknife is considered as outdated, replaced by bootstrap, but it can still has its place. In the [example above](#test_var_ex), where double bootstrap is used to perform a studentized hypothesis test when variance estimator is not readily available, the second iteration of the bootstrap can be naturally replaced by jackknife instead. Depending on the sample size $N$, this might lead to a better trade-off between accuracy and computation costs (note that the jackknife is generally cheaper than the bootstrap).
+
+# Final Thoughts
+
+The name "bootstrap" refers to one of the absurd exploits of [Baron Munchausen](https://en.wikipedia.org/wiki/Baron_Munchausen), who allegedly got out from the bottom of the lake by pulling up his bootstraps. At first glance, it also seems absurd that by resampling (particularly with a non-parametric bootstrap) one could actually obtain better results compared to just using the data set once -- after all, there cannot be more information in the resampled data sets. Nonetheless, the bootstrap can serve us when direct analytic calculations are not available. In such cases, one often relies on CLT and the asymptotic normality it provides. However, the asymptotic normality is not a very sharp tool: the distribution is always symmetric and thus it cannot work too well e.g. for skewed distributions (of course, the skewness vanishes asymptotically, but in finite samples skewness is the main term describing the departure of the distribution of a given statistics from normality). A well set-up bootstrap can, on the other hand, provide an effective correction (e.g. for skewness) and thus provide a better approximation of the distribution of a given statistics compared to normality.
+
+There is a tendency to use bootstrap blindly and there has been claims such that the bootstrap (in its concordance with Monte Carlo simulations) makes mathematical skills obsolete in statistics. While bootstrap can indeed reduce the mathematical finesse needed to solve a statistical problem, e.g. to come up with a confidence interval or a test in practice, verifying the coverage of such a confidence interval or the validity of such a test actually requires even higher mathematical skills.
+
+We have not dived into such theoretical considerations, since the mathematical finesse required for those is far beyond the scope of this course. However, the folk knowledge is that bootstrap *works* when the statistics possesses asymptotic normality with a non-degenerate variance (which generally requires some regularity or smoothness conditions). On the other hand, one has to be careful when working with order statistics, extremal statistics, non-smooth transformations, or non-i.i.d. regimes (e.g. time series).
+
+At the same time, it is fair to admit that theoretical properties of bootstrap are only asymptotic, and those may not serve as a good characterization of the finite sample performance. For example, it can be shown that the iterated bootstrap can reduce the asymptotic bias by an order increasing with the number of bootstrap iterations. However, more then two iterations are not practically viable. And even if they were, with more and more bootstrap iterations it will take larger and larger sample size for the asymptotic rates to "kick in" and result into better finite sample performance. Thus simulation studies examining the finite sample performance of any bootstrap procedure are vital.
+
+But the bottom line is that any bootstrap procedure (take the goodnes-of-fit parametric bootstrap test above for an example) should not be just embraced without a suspicion. Ideally, both asymptotic properties of a bootstrap procedure and its actual finite sample performance should be investigated. In reality, asymptotic consideration are hard, but careful simulations studies investigating finite sample performances should always be performed.
+
+# References
+
+Davison & Hinkley (2009) Bootstrap Methods and their Application
+
+Wasserman (2005) All of Nonparametric Statistics
+
+Shao & Tu (1995) The Jackknife and Bootstrap
+
+Hall (1992) The Bootstrap and Edgeworth Expansion
+
+
+
+
+
+

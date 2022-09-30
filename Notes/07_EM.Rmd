@@ -1,0 +1,244 @@
+---
+title: "EM algorithm"
+output:
+  html_document:
+    toc: true
+header-includes:
+  - \newcommand{\E}{\mathbb{E}}
+  - \newcommand{\R}{\mathbb{R}}
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Motivation and Examples
+
+Maximum likelihood is the dominant form of estimation in statistics. Recall that it is a parameter estimation procedure, so we always have to put a parametric model to our data. The EM algorithm is an iterative algorithm for calculating maximum likelihood estimators (MLEs) in situations where
+
+* there is missing data (e.g. censored observations, Example 1 below) complicating the calculations, or
+* it is beneficial to think of our data as if there were some components missing, because it would simplify the calculation (e.g. estimating mixture distributions, Example 2 below).
+
+TODO: describe the EM algorithm
+
+The E-step, i.e. calculating the expected likelihood, sometimes coincides with calculating expected values of the unobserved data (with the current parameters) and plugging them into the complete likelihood, but this is not always the case (see Example 3 below)! Actually, as will become clear, it is the case if and only if the complete log-likelihood is linear (w.r.t. the full data).
+
+## Example 1: Censored Observations
+
+Mehdi Lecture 8 - censored exponential distribution - there it is just about plugging in expectated values for the censored variables, takze je to nevychovne :/
+
+## Example 2: Mixing Proportions
+
+Jako v sesitu pro Gaussovsky pripad.
+
+## Example 3: Multivariate Gaussian with Missing Entries
+
+Assume $\mathbf{x}^{(1)},\ldots,\mathbf{x}^{(N)}$ is a random sample from a $p$-variate Gaussian distribution with mean $\mu$ and covariance $\Sigma$, but not all entries of $\mathbf{x}^{(1)},\ldots,\mathbf{x}^{(N)}$ are observed. The goal is to estimate $\mu$ and $\Sigma$ from the incomplete measurements. We will denote $\mathbf{x}^{(n)}_{obs}$ the observed part of $\mathbf{x}^{(n)}$ and we will denote $\mu^{(n)}_{obs}$ and $\Sigma^{(n)}_{obs}$ the mean and the covariance of $\mathbf{x}^{(n)}_{obs}$, i.e. $\mu^{(n)}_{obs}$ is just a sub-vector of $\mu$ and $\Sigma^{(n)}_{obs}$ is a sub-matrix of $\Sigma$.
+
+This is one of the instances where a programming syntax can be simpler than math. In `R`, having our data as a matrix `X` with `NA` for the missing entries, we could do for every $n=1,\ldots,n$
+```{r,eval=F}
+#     X - a data matrix of size N x p
+#    mu - a mean vector of size p
+# Sigma - a covariance matrix of size p x p
+ind_n <- !is.na(X[n,])
+x_n_obs <- X[n,ind_n]             # observed part of the n-th sample
+mu_n_obs <- mu[ind_n]             # mean of x_n_obs
+Sigma_n_obs <- Sigma[ind_n,ind_n] # covariance of x_n_obs
+```
+
+Sample `levelplots`'s of `mu_n_obs` and `Sigma_n_obs` are shown below.
+
+```{r, echo=F, fig.show="hold", out.width="50%"}
+library(lattice)
+set.seed(123)
+ind_n <- sample(1:10,size=7)
+mu <- rep(0,10)
+mu[ind_n] <- 1             # which entries of mu correspond to observed
+Sigma <- array(0,c(10,10))
+Ind <- outer(mu==1,mu==1)  # bi-variate index set corresponding to observed entries
+Sigma[Ind==1] <- 1
+levelplot(t(as.matrix(mu)),main="mu_n_obs")
+levelplot(Sigma, main="Sigma_n_obs")
+```
+
+Recall the density $f(\mathbf{x})$ of a p-variate Gaussian (e.g. [here](https://en.wikipedia.org/wiki/Multivariate_normal_distribution) on wiki). Hence we have
+\[
+\log f(\mathbf{x}^{(n)}) = \mathrm{const\,} - \frac{1}{2} \mathrm{log\,det}(\Sigma) - 
+\frac{1}{2} \big( \mathbf{x}^{(n)} - \mu \big) \Sigma^{-1} \big( \mathbf{x}^{(n)} - \mu \big),
+\]
+and since $\mathbf{x}^{(n)}_{obs}$ is just a sub-vector of $\mathbf{x}^{(n)}$, we have
+\[
+\log f(\mathbf{x}^{(n)}_{obs}) = \mathrm{const\,} - \frac{1}{2} \mathrm{log\,det}(\Sigma_{obs}^{(n)}) - 
+\frac{1}{2} \big( \mathbf{x}^{(n)}_{obs} - \mu_{obs}^{(n)} \big) \Sigma^{-1}_{obs} \big( \mathbf{x}^{(n)}_{obs} - \mu_{obs}^{(n)} \big).
+\]
+
+It follows that the complete and observed likelihood are
+\[
+\begin{split}
+\ell_{comp}(\mu,\Sigma) &= \mathrm{const\,} - \frac{N}{2} \mathrm{log\,det}(\Sigma) - 
+\sum_{n=1}^N \frac{1}{2} \underbrace{\big( \mathbf{x}^{(n)} - \mu \big) \Sigma^{-1} \big( \mathbf{x}^{(n)} - \mu \big)}_{\mathrm{tr}\Big( \big( \mathbf{x}^{(n)} - \mu \big) \big( \mathbf{x}^{(n)} - \mu \big)^\top \Sigma^{-1} \Big)}, \\
+\ell_{obs}(\mu,\Sigma) &= \mathrm{const\,} - \frac{1}{2} \sum_{n=1}^N \mathrm{log\,det}(\Sigma_{obs}^{(n)}) - 
+\sum_{n=1}^N \frac{1}{2} \big( \mathbf{x}_{obs}^{(n)} - \mu_{obs}^{(n)} \big) \big(\Sigma_{obs}^{(n)}\big)^{-1} \big( \mathbf{x}_{obs}^{(n)} - \mu_{obs}^{(n)} \big).
+\end{split}
+\]
+While optimizing $\ell_{comp}$ is easy (not that it is *easy*, but it is just a multivariate Gaussian MLE), optimizing $\ell_{obs}$ is hard and we will do it via the EM algorithm.
+
+The $l$-th iteration E-step requires constructing
+\[
+Q(\theta|\theta^{(l-1)}) = \E_{\theta^{(l-1)}}\big[ \ell_{comp}(\theta) \big| \mathbf{x}_{obs}^{(n)}, n=1,\ldots,N \big] = \E_{\theta^{(l-1)}}\big[ \ell_{comp}(\theta) \big| data],
+\]
+where we denote $\theta=(\mu,\Sigma)$. Given the linearity of $\ell_{comp}$, we can take the conditional expectation inside:
+\[
+Q(\theta|\theta^{(l-1)}) = \mathrm{const\,} - \frac{N}{2} \mathrm{log\,det}(\Sigma) - 
+\sum_{n=1}^N \frac{1}{2}\mathrm{tr}\Big( \E_{\theta^{(l-1)}} \Big[ \big( \mathbf{x}^{(n)} - \mu \big) \big( \mathbf{x}^{(n)} - \mu \big)^\top \Big| data \Big] \Sigma^{-1} \Big)
+\]
+
+We will calculate the conditional expectation above (which is a matrix) entry by entry and distinguish 3 cases depending on whether both, one, or none of the factors in the product are observed:
+\[
+\E_{\theta^{(l-1)}} \Big[ \big( x_{n,i} - \mu_i \big) \big( x_{n,j} - \mu_j \big) \Big| data \Big] = \begin{cases}
+\big( x_{n,i} - \mu_i \big) \big( x_{n,j} - \mu_j \big),\qquad\qquad\qquad \text{when both } x_{n,i} \text{ and } x_{n,j} \text{ are observed}, \\
+\big( x_{n,i} - \mu_i \big)\big(\E_{\theta^{(l-1)}}[x_{n,j}|data]-\mu_j\big),\quad \text{when both } x_{n,i} \text{ is observed (similarly if } x_{n,j} \text{ is observed)}, \\
+\E_{\theta^{(l-1)}}[(x_{n,i}-\mu_i)(x_{n,j}-\mu_j)|data],\quad \text{when neither } x_{n,i} \text{ nor } x_{n,j} \text{ are observed}.
+\end{cases}
+\]
+Notice that $\E_{\theta^{(l-1)}}[x_{n,j}|data]$ is just the linear predictor introduced last week, denoted by $\widehat{x}_{n,j}$ last week, but now let us denote them by $\widehat{x}_{n,j}^{(l-1)}$ to remember they are the conditional expectations from the previous iteration.
+
+The calculation of $\E_{\theta^{(l-1)}}[(x_{n,i}-\mu_i)(x_{n,j}-\mu_j)|data]$ is a bit painful, but adding and subtracting $\widehat{x}_{n,i}^{(l-1)}$, resp. $\widehat{x}_{n,j}^{(l-1)}$ in the inner-most parentheses gives
+\[
+\begin{split}
+\E_{\theta^{(l-1)}}[(x_{n,i}-\mu_i)(x_{n,j}-\mu_j)|data] &=
+(\widehat{x}_{n,i}^{(l-1)}-\mu_i)(\widehat{x}_{n,j}^{(l-1)}-\mu_j) + \E_{\theta^{(l-1)}}[(x_{n,i}-\widehat{x}_{n,i}^{(l-1)})(x_{n,j}-\widehat{x}_{n,j}^{(l-1)})|data] \\
+&\quad+
+(\widehat{x}_{n,i}^{(l-1)}-\mu_i) \E_{\theta^{(l-1)}}[(x_{n,j}-\widehat{x}_{n,j}^{(l-1)})|data] +
+(\widehat{x}_{n,i}^{(l-1)}-\mu_j) \E_{\theta^{(l-1)}}[(x_{n,i}-\widehat{x}_{n,i}^{(l-1)})|data] \\
+&= (\widehat{x}_{n,i}^{(l-1)}-\mu_i)(\widehat{x}_{n,j}^{(l-1)}-\mu_j) + \mathrm{cov}_{\theta^{(l-1)}}(x_{n,i},x_{n,j}|data) + 0 + 0\\
+&=: (\widehat{x}_{n,i}^{(l-1)}-\mu_i)(\widehat{x}_{n,j}^{(l-1)}-\mu_j) + c_{n,i,j}.
+\end{split}
+\]
+
+Altogether, we can write
+\[
+\E_{\theta^{(l-1)}} \Big[ \big( \mathbf{x}^{(n)} - \mu \big) \big( \mathbf{x}^{(n)} - \mu \big)^\top \Big| data \Big] = (\widehat{\mathbf x}^{(n)(l-1)}-\mu)(\widehat{\mathbf x}^{(n)(l-1)}-\mu)^\top + \mathbf{C}^{(n)},
+\]
+where $\mathbf{C}^{(n)} = (c_{n,i,j})_{i,j=1}^{p,p}$. Hence we have completed the E-step:
+\[
+Q(\theta|\theta^{(l-1)}) = \mathrm{const\,} - \frac{N}{2} \mathrm{log\,det}(\Sigma) - 
+\sum_{n=1}^N \frac{1}{2}\mathrm{tr}\Big( (\widehat{\mathbf x}^{(n)(l-1)}-\mu)(\widehat{\mathbf x}^{(n)(l-1)}-\mu)^\top \Sigma^{-1} \Big) - \frac{1}{2} \mathrm{tr}\big( \mathbf{C} \Sigma^{-1} \big),
+\]
+where $\mathbf{C} = \sum_n \mathbf{C}^{(n)}$.
+
+The $M$-step is now straightforward. Updating $\mu$ is exactly the same as if a Gaussian MLE was calculated, i.e. $\mu^{(l)} = N^{-1} \sum_{n} \widehat{\mathbf x}^{(n)(l-1)}$, that is just the sample mean of the completed matrix. For $\Sigma^{(l)}$, rearrange
+\[
+Q(\theta|\theta^{(l-1)}) = \mathrm{const\,} - \frac{N}{2} \mathrm{log\,det}(\Sigma) - 
+\sum_{n=1}^N \frac{1}{2}\mathrm{tr}\Big( \big[ (\widehat{\mathbf x}^{(n)(l-1)}-\mu)(\widehat{\mathbf x}^{(n)(l-1)}-\mu)^\top + \mathbf{C}^{(n)} \big] \Sigma^{-1} \Big).
+\]
+This can be solved like Gaussian MLE for $\Sigma$, i.e. we take a derivative w.r.t. $\Sigma$, set it to zero, plug in the current estimate for $\mu$, and solve to obtain
+\[
+\Sigma^{(l)} = \frac{1}{N} \sum_{n=1}^N \big[ (\widehat{\mathbf x}^{(n)(l-1)}-\mu)(\widehat{\mathbf x}^{(n)(l-1)}-\mu)^\top + \mathbf{C}^{(n)} \big].
+\]
+
+*Note*: The calculation above is a perfect example of a shortcut in calculations. Instead of solving the M-step, we recognize the connection to Gaussian MLE and utilize it.
+
+### Selecting No. of Components for PCA
+
+Example 3 shows how to perform **Step I** needed to cross-validate for the number of components $r$. Actually, the predictors $\widehat{x}_{n,j}$ are naturally taken as the limit of $\widehat{x}_{n,j}^{(l)}$ for $l \to \infty$.
+
+One should remember that this approach to selecting the rank $r$ for PCA requires distributional assumption (Gaussianity) on the observations.
+
+Notice that, even though it might feel quite natural, calculating the expected complete log-likelihood does **NOT** correspond just to simple imputing of the respective conditional means into the likelihood. What might feel quite natural would not have the desired monotone convergence property below.
+
+# Convergence Properties
+
+Jako v sesitu.
+
+## Speed of Convergence
+
+Jako v sesitu
+
+# MM algorithms
+
+Generally speaking, closed-form MLEs are rather an exception than a rule. There are many non-trivial cases where MLE has to be obtained via numerical optimization. In this section, I will explain that EM the algorithm, despite the statistical jargon evolving around the concept of missing data and calculating expected likelihoods, can also be seen as an optimization algorithm for finding MLEs numerically.
+
+Apart from coping with missing data via the EM algorithm, we all know another instance of a numerical algorithm that is commonly applied to calculate MLEs: iteratively reweighted least squares (IRLS) used to estimate parameters in generalized linear models. Actually, both IRLS and EM are special cases of a more general class of algorithms called the MM algorithms. The letters MM stand either for "majorization-minimization" or "minorization-maximization". Let us focus on the former. Assume we want to maximize a function $f : \R^p \to R$.
+
+**Definition**: A function $g(\mathbf{x} | \mathbf{x}^{(l)})$ is said to *majorize* function $f : \R^p \to R$ at $\mathbf{x}^{(l)}$ provided
+\[
+\begin{split}
+f(\mathbf{x}) &\leq g(\mathbf{x} | \mathbf{x}^{(l)}), \qquad \forall\, \mathbf{x}, \\
+f(\mathbf{x}^{(l)}) &= g(\mathbf{x}^{(l)} | \mathbf{x}^{(l)}).
+\end{split}
+\]
+
+In other words, the surface $\mathbf{x} \mapsto g(\mathbf{x} | \mathbf{x}^{(l)})$ is above the surface $f(\mathbf{x})$, and it is tangent to it at $\mathbf{x}^{(l)}$.
+
+Assume our goal is to minimize a function $f : \R^p \to R$. The basic idea of the MM algorithm is to start from an initial guess $\mathbf{x}^{(0)}$ and for $l=1,2,\ldots$ iterate between the following two steps until convergence:
+
+* **Majorization step**: construct $g(\mathbf{x} | \mathbf{x}^{(l-1)})$, i.e. construct a majorizing function to $f$ at $\mathbf{x}^{(l-1)}$ 
+* **Minimization step**: set $\mathbf{x}^{(l)} = \mathrm{arg \, min}_\mathbf{x} g(\mathbf{x} | \mathbf{x}^{(l-1)})$, i.e. minimize the majorizing function
+
+Note that immediately by the construction of the sequence, we have
+\[
+f(\mathbf{x}^{(l)}) = g(\mathbf{x}^{(l)} | \mathbf{x}^{(l-1)}) \leq g(\mathbf{x}^{(l-1)} | \mathbf{x}^{(l-1)}) = f(\mathbf{x}^{(l-1)}),
+\]
+so MM algorithms trivially converge monotonically (provided they converge, which we will address below).
+
+Now, we will show that the E-step in the EM algorithm is just a specific way to construct majorizations. Therefore we will have Claim 1 above (the ascent property of the EM algorithm) proven.
+
+## E-step Minorizes
+
+Here we will cast the EM algorithm in the MM framework. While we have developed MM in the "majorization-minimization" setup, the EM naturally lies in the "minorization-maximization" setup, since we try to maximize the likelihood. To connect the two worlds that only differ by a sign, let's minimize the negative log-likelihood here instead. So consider the following equivalent formulation of the EM algorithm aimed at minimizing $- \ell_{obs}(\theta)$:
+\[
+\begin{split}
+\textbf{E-step:} \quad Q(\theta|\theta^{(l-1)}) &:= \E_{\theta^{(l-1)}}\big[ - \ell_{comp}(\theta) \big| X_{obs} \big] \\
+\textbf{M-step:} \quad\quad\qquad \theta^{(l)} &:= \mathrm{arg\,min}_{\theta} Q(\theta|\theta^{(l-1)})
+\end{split}
+\]
+
+From the proof of Proposition ??, we have (incorporating the extra sign)
+\[
+- \ell_{obs}(\theta) = Q(\theta|\theta^{(l-1)}) + H(\theta, \theta^{(l-1)})
+\]
+and since still $H(\theta, \theta^{(l-1)}) \leq H(\theta^{(l-1)}, \theta^{(l-1)})$, we obtain
+\[
+- \ell_{obs} = Q(\theta|\theta^{(l-1)}) + H(\theta^{(l-1)}, \theta^{(l-1)}) =: \widetilde{Q}(\theta|\theta^{(l-1)})
+\]
+with equality at $\theta = \theta^{(l-1)}$.
+
+Hence $\widetilde{Q}(\theta|\theta^{(l-1)})$ is majorizing $- \ell_{obs}(\theta)$ at $\theta = \theta^{(-l)}$. Finally, since $H(\theta^{(l-1)}, \theta^{(l-1)})$ is a constant (w.r.t. $\theta$), minimizing $Q$ is equivalent to minimizing $\widetilde{Q}$.
+
+We have shown above that EM is a special case of the MM algorithm. If we remove the extra sign, it is clear that the E-step of ?? minorizes the observed log-likehood (which is being maximized) up to a constant.
+
+## Convergence of MM algorithms
+
+**Proposition.** (*Lange, 2013, Proposition 12.4.4) Suppose that all stationary points of $f(\mathbf{x})$ are isolated and that the stated differentiability, coerciveness, and convexity assumptions
+are true. Then any sequence of iterates $\mathbf{x}^{(l)} = M(\mathbf{x}^{(l-1)})$ generated
+by the iteration map $M(\mathbf {x})$ of the MM algorithm possesses a limit, and
+that limit is a stationary point of $f(\mathbf {x})$. If $f(\mathbf {x})$ is strictly convex, then
+$\lim_{l \to \infty} \mathbf{x}^{(l)}$ is the minimum point.
+
+The previous proposition does not properly state its assumptions, but just briefly:
+
+1. differentiability -- conditions on the majorizing functions guaranteeing differentiability of the iteration map $M$
+2. coerciveness -- a function $f: \R^p \to R$ is *coercive* if, on any line in $R^p$, it escapes to infinity at $\pm \infty$.
+3. convexity -- this is clear, $f$ has to be convex. On one hand, this assumption is just a technical assumption, algorithms with the monotone convergence property will in practice always converge to a stationary point. On the other hand, we are mostly interested in the strictly convex cases anyway. 
+
+There are two points to be made here:
+
+* In numerical optimization, there are many different approaches to do the same thing, and in the case of nice (simple) problems they coincide. Not all IRLS algorithms can be seen as MM algorithms, but the EM algorithm is just a special case of EM. That doesn't mean, however, that taking expectation to "complete" data has to be the most natural way to find minorizations, but in statistics this is what we often encounter.
+* Optimization problems in statistics are often nice from the optimization perspective: the most important distributions lead log-concave likelihoods (e.g. exponential families), hence convexity; likelihood functions are typically coercive; and taking expectations of log-likelihood (which is typically itself differentiable) amounts to integration, hence differentiability.
+
+# Some Comments about EM
+
+* It is numerically stable, which is a consequence of the monotone convergence property of all MM algorithms.
+* Computational costs per iteration are typically very favorable.
+* However, the algorithm tends to converge very slowly if the landscape around the optimum (or the stationary point of convergence) is flat. Again, this is true for all MM algorithm, but in statistics this does not pose serious issues, since early stopping is rarely a problem in statistics. The uncertainty that arises from randomness usually outweighs numerical errors. In other words, if the landscape around the optimum, is flat, we might end up with an estimator far away from the truth. But at the same time, the confidence region for the parameter will be adequately large.
+* The convergence can be easily monitored by looking at $| f(\mathbf{x}^{(l)}) - f(\mathbf{x}^{(l-1)})|$.
+* The M-step often does not have a closed form solution either, but is typically much simpler than the original problem. If iterative algorithm is used for the M-step, early stopping for the inner iteration is desirable.
+
+# References
+
+* Lange, K. (2013). *Optimization*. 2nd Edition.
+* Dempster, A. P., N. M. Laird \& D. B. Rubin. (1977) "Maximum likelihood from incomplete data via the EM algorithm." *Journal of the Royal Statistical Society: Series B (Methodological)* 39.1: 1-22.
+    - one of the most cited papers in statistics of all time
+
+* Little, R. J., \& Rubin, D. B. (2019). *Statistical analysis with missing data*. 3rd Edition.

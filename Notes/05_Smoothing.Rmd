@@ -1,0 +1,77 @@
+---
+title: "Non-parametric Regression"
+output:
+  html_document:
+    toc: true
+header-includes:
+  - \newcommand{\E}{\mathbb{E}}
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+TODO: Very often it is assumed that $Y = m(X) + \epsilon$, but this introduces a structural assumption which is needed nowhere in what we are presenting?
+
+Suppose we observe i.i.d. copies of a bivariate random vector $(X,Y)^\top$, that is a random sample
+$(X_1,Y_1)^\top, \ldots, (X_n, Y_n)^\top$, and we are interested in modeling the conditional expectation of the response variable $Y$ given the single predictor variable $X$, i.e.
+$$ m(x) := \E \big[ Y \big| X = x \big] $$
+In linear regression, we assume a parametric model $m(x) = \beta_0 + \beta_1 x$. Here, we would like to make no such structural assumption. How to estimate $m(x)$ from the observed data non-parametrically?
+
+# 1. Local Constant Regression
+
+The simplest idea would be to use what we learned in the previous chapter, i.e. kernel density estimation. Denoting $f_X(x)$ the marginal density of $X$, $f(X,Y)(x,y)$ the joint density of $X$ and $Y$ and $f_{Y|X}(y|x)$ the marginal density of $Y$ given $X$, we can express the conditional expectation above as
+$$ m(x) = \E \big[ Y \big| X = x \big] = \int_\mathbb{R} y f_{Y|X}(y|x) dy = \frac{\int_\mathbb{R} y f_{X,Y}(x,y) dy}{f_X(x)} $$
+Plugging in the KDEs of $f_{X|Y}(x,y)$ and $f_X(x)$ (with a fixed bandwidth $h$, a fixed kernel $K(\cdot)$ for the univariate density, and the separable kernel $K(\cdot)K(\cdot)$ for the bivariate density), i.e.
+$$ \widehat{f}_X(x) = \frac{1}{nh} \sum_{i=1}^n K\left( \frac{X_i-x}{h} \right) \qquad \& \qquad \widehat{f}_{X,Y}(x,y) = \frac{1}{n h^2} K\left( \frac{X_i-x}{h} \right) K\left( \frac{Y_i-y}{h} \right), $$
+into the previous formula, we obtain an estimator of the conditional expectation:
+$$ \mathbf{m}(x) = \frac{\sum_{i=1}^n K\left( \frac{X_i-x}{h} \right) Y_i}{ \sum_{i=1}^n K\left( \frac{X_i-x}{h} \right)} $$
+where we used that $\frac{1}{h} \int_\mathbb{R} y K\left( \frac{Y_i-x}{h} \right) dy = \int_\mathbb{R} (Y + th) K(t) dt = Y$, where we used the symmetry of the kernel (twice).
+
+Note that the previous estimator is just a weighted average, and a weighted average is a solution to the weighted least squares problem, in this case:
+$$ \widehat{m}(x) = \underset{\beta_0 \in \mathbb{R}}{\mathrm{arg \; min}} \sum_{i=1}^\infty K\left( \frac{X_i-x}{h} \right) (Y_i - \beta_0)^2 $$
+So the conditional expectation can be estimated at a fixed location $x$ (i.e. locally) by an intercept-only linear model (i.e. constant). Hence we call this estimator *local constant regression*.
+
+# 2. Local Polynomial Regression
+
+
+
+# 3. Local Linear Regression
+
+## 3.1 Bandwidth Selection
+
+bias and variance
+
+## 3.2 Why Local Linear is the Order of Choice?
+
+Bias and variance can be calculated similarly also for higher order local polynomial regression estimators. In general
+
+* bias decreases with an increasing order
+* variance increases with increasing order, but only for $p=2k+1 \to p+1$, i.e. when increasing an odd order to an even one
+
+For this reason, odd orders are preferred to even ones, and $p=1$ is easy to grasp as it corresponds to locally fitted simple regression line. Contrarily, it is hard to argue why $p=3$ or higher should be used. In terms of degrees of freedom (and in fact also the convergence rates, which we are not showing) increasing the order has a similar effect as increasing the bandwidth. So it is reasonable to assume with a higher $p$, lower $h$ will be optimal, and vice versa. In practice, one simply fixes $p=1$ and only tunes the bandwidth $h$.
+
+# 4. `loess()` and `lowess()`
+
+`loess()` (LOcal regrESSion) should be local linear regression with tricube kernel
+
+`lowess()` (LOcally WEighted Scatterplot Smoothing) is an iterative algorithm:
+
+* fit `loess()`
+* repeat
+  - calculate residuals of the current fit  
+  - calculate weights based on the residuals
+  - fit weighted `loess()`
+* until convergence (or just 3-times)
+
+The goal of `lowess()` is to improve `loess()` by making it *robust* (immune) to outliers.
+
+# 5. Smoothing Splines
+
+Let's go back to least squares (there is a natural connection to likelihood, if we assume gaussianity) and penalize for roughness (2nd derivative is the most convenient one). Remarkably, solution to this optimization problem is known to be the natural cubic spline. While the optimization problem is over an infinite-dimensional space (of functions with square-integrable second derivatives, which is a Sobolev space -- of all Sobolev spaces, only the one with order two is RKHS and hence allows for a finite-dimensional solution, right?), knowing that the solution is the natural cubic spline, it can be re-cast as a finite-dimensional problem, not too dissimilar to ridge regression.
+
+While in the case of natural cubic spline there is some beautiful math justifying why to look for functions that can be written as linear combinations of predefined functions (which is a parametric problem, but the beautiful math describes how this is related to the non-parametric, infinite-dimensional problem), we can also adopt a more brute (parametric) viewpoint: let us simply assume that $m$ can be expressed as a linear combination of some basis functions. In statistic, *B-spline* basis is extremely popular. If we restrict the number of basis functions enough, no penalization may be needed anymore. In practice, we can meet both penalized and non-penalized approaches.
+
+# References
+
+[N. Helwig's notes](http://users.stat.umn.edu/~helwig/notes/smooth-notes.html)

@@ -1,0 +1,573 @@
+---
+title: "Bayesian Computations"
+output:
+  html_document:
+    toc: true
+header-includes:
+  - \newcommand{\E}{\mathbb{E}}
+  - \newcommand{\R}{\mathbb{R}}
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+While in the frequentist world all the parameters (such as the mean or the variance) are considered a fixed numbers (fixed by nature before the same nature starts to generate data for us), in Bayesian thinking parameters themselves are random variables, with distributions depending on so-called hyper-parameters.
+
+Assume there is a random variable $X$ and a parameter $\theta$. In the frequentist world, we often seek to estimate $\theta$ by maximum likelihood. We consider $\theta$ fixed, assume a family of densities $\{ f_\theta(x) \mid \theta \in \Theta \}$ (a *frequentist model*), and select a $\theta \in \Theta$ as our estimator such that the likelihood $L(\theta) = f_\theta(X)$ is maximized. Recall that the likelihood measures how *compatible* each value of $\theta$ is with our observation $X$. The estimator is chosen such that this compatibility is maximized.
+
+In the Bayesian world, on the other hand, both $X$ and $\theta$ are considered random, so they have a joint density $f_{X,\theta}$, which can be written by the law of conditional probability in two ways (let us denote the observed value of $X$ as $x_0$, for clarity) as
+\[
+f_{X,\theta}(x, \theta) = \underbrace{f_{X \mid \theta} (x \mid \theta)}_{\mathrm{likelihood}} \underbrace{f_\theta(\theta)}_{\mathrm{prior}} = \underbrace{f_{\theta \mid X} (\theta \mid x)}_{\mathrm{posterior}} f_X(x).
+\]
+
+Likelihood is equivalent to a frequentist model, while a *Bayesian model* is this joint density, i.e. specifying a Bayesian model amounts to specifying both the likelihood and the *prior*. The prior can be seen as (e.g. expert) information available to us before observing any data (though in practice it is rather chosen with some goal in mind), while the *posterior* should be seen as the information on $\theta$ available after taking the data into account.
+
+Denoting the observed data by $x_0$ for the sake of explicitness, the posterior can be written as
+\[
+f_{\theta \mid X=x_0} (\theta \mid x_0) = \frac{f_{X \mid \theta} (x_0 \mid \theta)f_\theta(\theta)}{f_X(x_0)} = \frac{f_{X \mid \theta} (x_0 \mid \theta)f_\theta(\theta)}{\int f_{X \mid \theta} (x_0 \mid \theta)f_\theta(\theta) d \theta}.
+\]
+This is the **Bayes theorem**. 
+
+Since $x_0$ is fixed (we condition on it), the only variable on the right is $\theta$. The posterior is clearly density for $\theta$, and as a density it has to integrate to 1, so it only needs to be specified up to a multiplicative constant. For this reason, we can simply forget about the estimator and write the posterior as
+\[
+\begin{split}
+f_{\theta \mid X=x_0} (\theta \mid x_0) &\propto f_{X \mid \theta} (x_0 \mid \theta)f_\theta(\theta),\\
+\text{in words:}\quad\qquad\text{posterior} &\propto \text{likelihod} \times \text{prior}
+\end{split}
+\]
+where the symbol "proportional to" means there exists a constant such that equality holds after multiplying the RHS by this constant. While forgetting constants like this is useful to save ink, one should not forget that obtaining the constant is not for free (it is actually one of the harder things in Bayesian statistics).
+
+The formula above should be seen as an *information update*. Before observing $X$, we only have the *prior* information summarizing our beliefs about $\theta$. After observing $X$, our believes on $\theta$ updates into the *posterior*. Of course, $X$ can be a vector (numerous observations). If a new observation $Y=y_0$, where $Y$ is independent of $X$, is observed, we do not have to recalculate the posterior, but only update it into a new one using the same update rule again:
+\[
+f_{\theta \mid X=x,Y=y}(\theta \mid x_0,y_0) = f_{Y,X\mid \theta}(x_0,y_0 \mid \theta) f_\theta(\theta) = f_{Y\mid \theta}(y_0 \mid \theta) \underbrace{f_{X\mid \theta}(x_0 \mid \theta) f_\theta(\theta)}_{\text{old posterior}},
+\]
+where the last equality holds due to the independence.
+
+The posterior summarizes all information available on $\theta$ based on our (Bayesian) model and available data. Hence Bayesians use the posterior to derive answers to all the statistical tasks, such as estimation, prediction, and model selection (as will be seen, Bayesian hypothesis testing is similar in flavor to model selection, but not so much to the standard *significance* testing).
+
+# Bayesian Approach to Standard Statistical Tasks
+
+Very generally (and vaguely), let us denote our data set $D$, its realization as $d$ for the sake of explicitness, and there is a (vector) parameter of interest $\theta$. The Bayesian model basically assumes that
+
+* a value for the parameter $\theta$ was picked by nature according to the prior distribution $f_\theta$, and
+* the data set $D=d$ was generated given this $\theta$ from the likelihood $f_{D\mid \theta}$.
+
+Solution to any statistical task (question) is derived from the posterior
+\[
+f(\theta \mid D = d) \propto f(d \mid \theta) f(\theta).
+\]
+
+## Point Estimation
+
+Answer sought is a numerical value $\widehat{\theta}$ for the vector $\theta$ (or its sub-vector) that is somehow compatible with the data.
+
+As frequentists, we search for $\widehat{\theta}$ using maximum likelihood, method of moments, or pretty much anything we can think of (e.g. a solution to a certain optimization problem such as penalized least squares).
+
+In the Bayesian world, we have the posterior, and there is more than one way how to extract a single value from the posterior:
+
+* MAP - Maximum A Posterior estimate, the mode of the posterior, i.e. the maximum of the posterior density
+     - this is the closest point estimator to the (frequentist) MLE, actually coinciding with the MLE if one uses a flat prior $f_\theta \equiv 1$ and approaching to MLE in the large sample limit irrespectively of the prior
+* posterior mean - the expected value of the posterior distribution
+* posterior median
+* generally, we can define a loss function and define the estimator to be the minimizer of the expected loss (expectation calculated under the posterior)
+
+In the example below, you can see a posterior distribution for a scalar parameter and how the three estimators above differ in the case of such a posterior.
+
+```{r, echo=F, message=F, warning=F, fig.dim=c(5,3), fig.align='center'}
+library(mlbench)
+library(rstanarm)
+library(bayesplot)
+library(insight)
+library(bayestestR)
+library(ggplot2)
+data("BostonHousing")
+bost <- BostonHousing[,c("medv","age","dis","chas")]
+model_bayes<- stan_glm(medv~., data=bost, seed=111, refresh=0)
+post <- get_parameters(model_bayes)
+mcmc_dens(model_bayes, pars=c("age"))+
+  vline_at(median(post$age), col="red")+
+  vline_at(mean(post$age), col="yellow")+
+  vline_at(map_estimate(post$age), col="green") + 
+  geom_text(x=-0.12,y=3,label="MAP", color = "green") +
+  geom_text(x=-0.12,y=1,label="median", color = "red") +
+  geom_text(x=-0.12,y=2,label="mean", color = "yellow") 
+```
+
+## Interval Estimation
+
+Sometimes, instead of producing a single numerical value for the parameter, we might be interested in a range of values compatible with the data.
+
+As frequentists, we build *confidence intervals* $CI_{1-\alpha}$, which are
+
+* nice, because they are inherently connected to the concept of significance (testing), but also
+* awkward, since they cannot be interpreted in probabilistic terms.
+
+As Bayesians, we construct *credible regions* $CR_{1-\alpha}$ by finding such a sub-set in the domain of $theta$, i.e. $CR_\alpha \subset \Theta$, that
+\[
+P(\theta \in CR_{1-\alpha}) = 1-\alpha,
+\]
+where the probability is calculated according to the posterior.
+
+*Note*: If $\theta$ has just one or two entries, it is possible to simply visualize the posterior as opposed to constructing a confidence region.
+
+Arguably, the Bayesian credible interval has exactly the probabilistic interpretation we seek. Typically, we aim for the narrowest credible interval, which is often called the *highest posterior density interval*, see below.
+
+```{r, echo=F, message=F, warning=F, fig.dim=c(5,3), fig.align='center', fig.cap="Black lines give credible region with 0.9 coverage."}
+ppp <- mcmc_dens(model_bayes, pars=c("age"))
+ddd <- density(ppp$data$Value)
+# sum(ddd$y[ddd$y>5.22])/sum(ddd$y)
+ppp + 
+  hline_at(5.22, col="gray") + 
+  vline_at(ddd$x[min(which(ddd$y>5.22))]) +
+  vline_at(ddd$x[max(which(ddd$y>5.22))]) +
+  geom_text(x=mean(ddd$x),y=3,label="0.9", color = "black")
+```
+
+## Prediction
+
+The goal here is prediction of new data points $D^\star$ based on the observed data $D = d$ and a model depending on parameters $\theta$. The model is again just the joint distribution of $D,D^\star$ and $\theta$, typically specified via:
+
+* a prior distribution $f_\theta$, and
+* a likelihood of the observed data $f_{D, D^\star\mid\theta} = f_{D\mid\theta} \cdot f_{D^\star\mid\theta}$.
+    - The last equality is in fact an **assumption** - independence of new and observed data conditioned on the model parameters - one that is assumed quite commonly.
+
+The prediction task can then be formulated as an estimation task in the Bayesian language: we can simply treat $D^\star$ as parameters:
+\[
+\begin{split}
+f_{\theta,D,D^\star} &= f_{D \mid D^\star, \theta} \cdot f_{D^\star,\theta} = f_{D \mid \theta} \cdot f_{D^\star\mid\theta} \cdot f_\theta \\
+&= f_{\theta,D^\star \mid D} \cdot f_{D}
+\end{split}
+\]
+and hence the posterior is
+\[
+f_{\theta,D^\star \mid D} \propto f_{D \mid \theta} \cdot f_{D^\star\mid\theta} \cdot f_\theta.
+\]
+
+We get the posterior for the new data $f_{D^\star \mid D}$ from the joint posterior above by marginalization (integrating out $\theta$). Then we predict $D^\star$ based on this posterior as either in point or interval prediction above.
+
+## Model Selection
+
+Finally, assume we have a set $M$ of candidate models and we would like to determine which is a better fit to the data. This task also regards hypothesis testing, since many hypotheses can be formulated as questions about fidelity of a submodel or a constrained model.
+
+From a Bayesian point of view, this just adds one more layer into the data generation process:
+
+1. A model $m$ is generated based on the prior distribution $f_M$ on the set of models.
+2. Conditionally on the specific model, parameters are generated according to some conditional prior distribution $f_{\theta \mid M=m}$
+    - note that different models may have different number of parameters; no one says that the form of $f_{\theta \mid M=m}$ has to be similar for all possible values of $m$
+3. Finally, conditionally on the model and parameter realizations, the data are generated according to $f_{D \mid M=m, \theta}$.
+
+Hence we are actually in the situation above (again, we will consider $M$ as parameters), just the model (the joint density of $D,\theta$ and $M$) is specified in a purely hierarchical way:
+\[
+\begin{split}
+f_{D,\theta,M} &= f_{D\mid\theta,M} \cdot f_{\theta,M} = f_{D\mid\theta,M} \cdot f_{\theta\mid M} \cdot f_M \\
+&= f_{\theta,M \mid D} \cdot f_D
+\end{split}
+\]
+and hence the posterior is
+\[
+f_{\theta,M \mid D} \propto f_{D\mid\theta,M} \cdot f_{\theta\mid M} \cdot f_M.
+\]
+And after integrating out $\theta$, we can answer all kinds of questions based on the marginal $f_{M \mid D}$.
+
+# Back to Earth
+
+The Bayesian approach to the standard statistical tasks, as presented above, seems beautiful and holistic, and it makes one wonder why anyone would attempt to do anything else, right?
+
+Well, the presentation above is dishonestly silent about the cornerstone aspect of Bayesian analysis: the posterior distribution (as well as the marginal distributions needed for prediction or model selection) can only rarely be handled analytically. One typically needs to resort to further approximations (e.g. the Laplace approximation approaches the posterior as if it was Gaussian) or to sampling from the posterior, utilizing Monte Carlo to approximate it numerically or to specifically analyze the properties of the posterior we are interested in.
+
+However, as we saw before, Monte Carlo is mostly useful for low-dimensional problems, but posterior is usually multidimensional (if there are more than a couple of parameters). Hence we resort to Markov Chain Monte Carlo (MCMC) instead. MCMC is absolutely crucial to do Bayesian inference (apart from simple cases, where exact analysis is possible, usually due to so-called *conjugacy*), but it is also used elsewhere, mostly in numerical integration. As such, it can also be useful for frequentism (e.g. integrating out nuisance parameters from the likelihood).
+
+*Note*: Compared to frequentism, Bayesianism offers some *conceptual straightforwardness*, but usually at the expense of increased *computational difficulty*.
+
+# Markov Chain Monte Carlo
+
+When we wish to calculate $\E g(X)$, the basic Monte Carlo approach is is to draw independent samples $X_1,\ldots,X_N$ distributed as $X$ and using the empirical estimator $N^{-1}\sum_n g(X_n)$ to approximate $\E g(X)$, with the justification provided by the LLN.
+
+However, for many problems (especially multidimensional ones), drawing independent copies of $X$ is not easily doable, and we resort to draws $X^{(1)}, X^{(2)}, \ldots$ forming a Markov chain.
+
+**Definition (informal):** A sequence of random variable $\{X^{(t)}\}_{t \geq 0}$ with values in $\mathcal{X} \subset \R^p$ such that
+\[
+X^{(t+1)} \mid X^{(t)}, X^{(t-1)},\ldots,X^{(0)} \sim X^{(t+1)} \mid X^{(t)}
+\]
+is called a discrete-time *Markov chain*.
+
+* The conditional distribution $X^{(t+1)} \mid X^{(t)}$ is described by the *transition kernel* $k(x,y)$. In case of a fixed $X^{(t)} = y$, $X^{(t+1)}$ is distributed according to a density $k_y(x) := k(x,y)$.
+    - Formally, the transition kernel $k$ has to meet additional measurability assumptions.
+* A distribution $f$ is called the *stationary distribution* of the Markov chain associated with the transition kernel $k$ if
+\[
+\int_\mathcal{X} k(x,y) f(x) d x = f(y).
+\]
+
+**Claim:** If the following *detailed balance condition* holds
+\[
+k(x,y) f(x) = k(y,x) f(y)
+\]
+for a distribution $f$ a transition kernel $k$, then $f$ is the stationary distribution of the Markov chain associated with $k$.
+
+Intuitively:
+
+* The transition kernel specifies the amount of flow the Markov chain has between points in $\mathcal{X}$.
+* Let $f_t$ denote the marginal distribution of $X^{(t)}$. In particular, the initial point $X^{(0)}$ is distributed according to some *initial distribution* $f_0$. The relationship between $f_{t+1}$ and $f_t$ is governed by the transition kernel $k$, which basically updates $f_t$ to $f_{t+1}$. If there is no update of the marginal distribution $f_t$, it means that the marginal $f_t$ is the stationary distribution, and there is never going to be another update as the chain runs forward.
+* The detailed balance condition requires for the forward flow from $x$ to $y$ to be exactly as strong as the backward flow from $y$ to $x$, given the marginal $f$. If the detailed balance condition holds, then the marginal distribution $f_t$ will approach to the stationary distribution $f$ regardless of the initial distribution $f_0$.
+
+Let $X^{(1)}, X^{(2)}, \ldots$ be draws from a Markov chain. If the stationary distribution of this Markov chain corresponds to the distribution of $X$ (which is exactly how we want to construct the chain, specific algorithms will be introduced below), the so-called *ergodic theorem* (which is basically a version of LLN for Markov chains, as opposed to independent data) still ensures that
+\[
+\frac{1}{T} \sum_{t=1}^T g(X^{(t)}) \longrightarrow \E g(X) \quad \text{for} \quad T \to \infty.
+\]
+There is also an "ergodic CLT", so even by discarding independence we are with MCMC in a similar setup to basic MC. Comparing MCMC to basic MC:
+
+* gain: MCMC is more widely applicable than basic MC
+* loss: we have to worry about *mixing*
+    - Assume we have constructed a Markov chain (a function that generates $X^{(t)}$ for us depending on $X^{(t-1)}$) with the desired stationary distribution $f$. However, we initialize the chain from a certain $X^{(0)}$ according to some distribution which is different from $f$ (otherwise we wouldn't need MCMC, we would keep simulating from $f$ and do basic MC instead). How can we know whether we ever got close to the target distribution and really explored the space? We will try to answer this below in [Section 2.4](#output-analysis).
+    
+Our goal is to construct a chain with a pre-specified target distribution, typically the posterior $f_{\theta \mid D = d}$. Think about our chain exploring the domain and drawing samples such that it mimics where the mass is. The basic idea of MCMC is that we can start from a simple chain (with a wrong target and thus wrong allocation of the mass), and tweak it such that the target is changed to the correct one. The simplest recipe to do this is the Metropolis-Hastings algorithm.
+
+## Metropolis-Hastings Sampling
+
+Assume we have a proposal chain $\{U^{(t)}\}$ specified by the transition kernel $c$, but it does not have the correct stationary distribution. Our goal is to change the chain (i.e. change its transition kernel) to satisfy the detailed balance condition w.r.t. $f$. That is, we want to make sure that we have the right amount of flow between $x$ and $y$, in both directions. If we have too much flow from $x$ to $y$, we can simply take part of that flow and remap it back to $x$ (i.e. force the chain to stay at one place). This is the simple idea behind the Metropolis-Hastings algorithm, which makes the algorithm somehow similar to rejection sampling:
+
+* **for** $t=1,2,\ldots$
+    - set $X^{(t)} := U^{(t)}$ with probability
+    \[
+    \alpha(X^{(t-1)},U^{(t)}) = \min\left(1,\frac{f(U^{(t)}) k(X^{(t-1)},U^{(t)})}{f(X^{(t-1)})k(U^{(t)},X^{(t-1)})}\right)
+    \]
+    - otherwise set $X^{(t)} := X^{(t-1)}$
+
+In Bayesian computations, $f$ is of course the posterior (what we want to simulate from). Notice how "correcting the flow" via the formula above does not depend on the unknown normalization constant of the posterior, which makes the algorithm attractive.
+
+Of course, the choice of the proposal chain is very important. The simple and common choice is a *random walk* defined recursively from $U^{(0)} := \epsilon_0$ as
+\[
+U^{(t+1)} := X^{(t)} + \epsilon_t,
+\]
+where $\epsilon_1,\epsilon_2,\ldots$ are drawn independently from a symmetric distribution. This leads to $c(x,y) = g(y-x)$, where $g$ is a symmetric density, such as the Student's $t$-distribution. Using the algorithm above with a symmetric random walk proposal is exactly what comes to mind under the name "Metropolis-Hastings algorithm". Note that it is easy to verify the detailed balanced condition in that case:
+
+* According to the detailed balance condition, we want to show that $k(u,x) f(u) = k(x,u) f(u)$, where $x$ denotes the old state and $u$ the new state. The transition kernel $k(x,u)$ here is given as the a mixture of moving away from $x$ to $u$ (drawn from density $\varphi_x(u)$ centered and symmetric around $x$) with probability $\alpha(x,u)$ and staying at $x$ with the residual probability. But we do not have to worry about staying at place, because that is symmetric w.r.t. to time flow for a symmetric proposal. The moving away part of $k(x,u)$ is equal to $\varphi_x(u) \alpha(x,u)$, but $\varphi_x(u) = \varphi_u(x)$ due to symmetry, and so we only need
+\[
+\alpha(x,u) f(x) = \alpha(u,x) f(u),
+\]
+but this is trivial since for $f(u) \neq f(x)$ it is either $\alpha(x,u) = 1$ leading to
+\[
+f(x) = \frac{f(x)}{f(u)} f(u)
+\]
+or $\alpha(u,x) = 1$ leading to 
+\[
+\frac{f(u)}{f(x)} f(x) = f(u).
+\]
+
+The beauty of MH algorithm is however that a broad class of proposals (other than random walks, even asymmetric proposals, which can be useful for heavily skewed targets) can be used.
+
+MH algorithm may look a bit awkward at first, since the goal usually is to sample from a continuous target distribution, so when drawing samples from the target, there should be no repeated values with probability one. Yet MH always produces repeated values by construction. This is not a problem in the long run, but we have to worry about what "long run" means.
+
+**Definition:** Acceptance rate for a Metropolis-Hasting algorithm is the average acceptance probability over iterations
+\[
+\bar{\alpha} = \lim_{T \to \infty} \frac{1}{T} \sum_{t=1}^T \alpha(X^{(t-1)},U^{(t)})
+\]
+
+**Example:** Consider the MH algorithm with a Gaussian random walk proposal to sample from a Gaussian mixture model
+\[
+f_{\mu_1,\mu_2,\sigma_1^2,\sigma_2^2,\tau}(x) = \tau \varphi_{\mu_1,\sigma_1^2}(x) + (1-\tau) \varphi_{\mu_2,\sigma_2^2}(x)
+\]
+with $\mu_1 = 1$
+Since we require the proposal to be symmetric, we only have a single parameter to be chosen for this Gaussian: the variance $\sigma^2$. How will the choice of $\sigma^2$ affect the sampling scheme? There is a certain trade-off. With too large $\sigma^2$, all the proposals are terrible
+
+```{R,echo=F, out.width='50%', fig.align='center'}
+mu1 <-0
+mu2 <- 5
+sigma1 <- sigma2 <- 1
+tau <- 0.7
+fmine <- function(x){
+  return(tau*dnorm(x,mu1,sigma1) + (1-tau)*dnorm(x,mu2,sigma2))
+}
+mhmine <- function(TT,sigma,burnin=1e3){
+  set.seed(123)
+  X <- rep(0,TT+burnin)
+  U_old <- rnorm(1,0,sigma)
+  X[1] <- rnorm(1,0,sigma)
+  accept <- 0
+  for(t in 2:(TT+burnin)){
+    if(t < burnin) accept <- 0
+    (U_new <- X[t-1] + rnorm(1,0,sigma))
+    alpha <- fmine(U_new)/fmine(X[t-1])
+    if(is.na(alpha)) alpha <- 0
+    R <- runif(1)
+    if(R < alpha){
+      X[t] <- U_new
+      accept <- accept + 1
+    }else{
+      X[t] <- X[t-1]
+    }
+    U_old <- U_new
+  }
+  # print(accept/TT)
+  return(X[(burnin+1):(burnin+TT)])
+  # return(X)
+}
+x <-(1:1000/1001-0.35)*15
+plot(x,fmine(x),type="l",main="Target density: mixture of two Gaussians")
+```
+
+```{R,echo=F, fig.show="hold", out.width='33%'}
+X <- mhmine(1e4,0.1) # 97 % acceptance rate
+plot(X,type="l",main=expression(paste("Sampled chain for ",sigma,"=0.1 leads to ",bar(alpha),"=0.97")),cex.main=1.5,xlab="t",ylab="values")
+plot(density(X),cex.main=1.5,main="KDE based on the sampled chain")
+plot(density(X[1:8000]),cex.main=1.5,main="KDE with only observations 1-8000 used")
+```
+
+```{R,echo=F, fig.show="hold", out.width='35%'}
+X <- mhmine(1e4,80) # 3 % acceptance rate
+plot(X,type="l",main=expression(paste("Sampled chain for ",sigma,"=80 leads to ",bar(alpha),"=0.03")),cex.main=1.5,xlab="t",ylab="values")
+plot(density(X),main="KDE based on the sampled chain")
+
+X <- mhmine(1e4,3) # 50 % acceptance rate
+plot(X,type="l",main=expression(paste("Sampled chain for ",sigma,"=3 leads to ",bar(alpha),"=0.5")),cex.main=1.5,xlab="t",ylab="values")
+plot(density(X),main="KDE based on the sampled chain")
+```
+
+A good acceptance rate (for random walk proposals) is 10 - 50 %, with the lower end recommended for multidimensional problems (more parameters). While the acceptance rate can be sometimes calculated theoretically, in practice we simply take a trial-error approach: try running short chains with different setups until you get a reasonable acceptance rates. Note that tuning acceptance rate while running a single chain is a bad idea, since it changes the target.
+
+## Gibbs Sampling
+
+The MH algorithm depends on a proposal, which can be hard to find (such that we have a reasonable acceptance rate) in multidimensional problems (when there are many parameter in $\theta$). The simplest way of dealing with this is decomposing the multidimensional distribution into its *full conditionals*, and draw from those -- in some cases this can be simple, or at least simpler than drawing from the full multidimensional distribution.
+
+Assuming that $\mathcal{X} = \Pi_{i=1}^p \mathcal{X}_i$ (typically $\mathcal{X}=\R^p$), the target distribution belongs to some vector $X = (X_1,\ldots,X_p)^\top$. The Gibbs sampler proceeds as follows from the initial state $x^{(0)} = (x^{(0)}_1,\ldots, x^{(0)}_p)^\top$:
+
+* **for** $t=1,\ldots$
+    - generate $x^{(t)}_1$ from the full conditional distribution $X_1 \mid X_2 = x_2^{(t-1)}, X_3 = x_3^{(t-1)}, \ldots, X_p = x_p^{(t-1)}$
+    - generate $x^{(t)}_2$ from the full conditional distribution $X_2 \mid X_1 = x_1^{(t)}, X_3 = x_3^{(t-1)}, \ldots, X_p = x_p^{(t-1)}$
+    - $\ldots$
+    - generate $x^{(t)}_p$ from the full conditional distribution $X_p \mid X_1 = x_1^{(t)}, X_2 = x_2^{(t)}, \ldots, X_{p-1} = x_{p-1}^{(t-1)}$
+
+*Note*:
+
+* The resulting Markov chain actually does not satisfy the detailed balance condition, but it can still be shown (by some trickery, suitably reverting time in the proof) that the chain has the joint distribution (composed of the conditionals used in the algorithm above) as its stationary distribution. From the random field theory's point of view, this is fundamental, but beyond the scope of this course.
+* The algorithm above is sometimes called the *systematic Gibbs sampler*, since it cycles through the conditionals in a deterministic way, as opposed to the *random scan Gibbs sampler*, which updates (maybe only a randomly selected subset of) indices in random order. For random scan Gibbs samplers, the detailed balance condition can be shown, but it can be tedious. In the special case, where only a single randomly selected component is updated in every step, the Gibbs sampler corresponds to the MH algorithm, where the acceptance probability just happens to be one, hence it satisfies the detailed balance.
+* The point this note tries to make is as follows: there is a lot of ways one can tweak many sampling algorithms, but one has to be careful not only about what could make sense, but also about what is mathematically valid.
+
+**Example:** Calculate $P(X_1 \geq 0, X_2 \geq 0)$ for
+\[
+X = (X_1,X_2)^\top \sim \mathcal{N}\left( \begin{pmatrix} \mu_1 \\ \mu_2 \end{pmatrix}, \begin{pmatrix} \sigma_1^2 & \sigma_{12} \\ \sigma_{21} & \sigma_2^2 \end{pmatrix} \right).
+\]
+Note that one cannot calculate this analytically, and we also know that sampling from a Gaussian is slightly tricky. However, using Gibbs sampler to approximate $P(X_1 \geq 0, X_2 \geq 0)$ is trivial, since Gaussian conditionals are Gaussian:
+\[
+X_i \mid X_j=x_j \sim \mathcal{N}\left( \mu_i + \frac{\sigma_{ij}}{\sigma^2_j} (x_j - \mu_j), \sigma_i^2 - \frac{\sigma_{ij}^2}{\sigma_j^2} \right).
+\]
+So e.g. for $\mu_1 = \mu_2 = 0$, $\sigma_1=\sigma_2=1$ and $\sigma_{12} = 0.5$, we have
+```{R, fig.show="hold", out.width="50%"}
+set.seed(123)
+burnin <- 1000
+TT <- 2000
+X1 <- rep(0, burnin+TT)
+X2 <- rep(0, burnin+TT)
+X1[1] <- 0
+X2[1] <- 0
+for(t in 2:(burnin+TT)){
+  X1[t] <- rnorm(1,0+0.3/1*(X2[t-1]-0), sqrt(1-0.3^2/1))
+  X2[t] <- rnorm(1,0+0.3/1*(X1[t]-0), sqrt(1-0.3^2/1))
+}
+X1 <- X1[-(1:burnin)]
+X2 <- X2[-(1:burnin)]
+
+m <- 5
+plot(rep(X1,each=2)[2:(2*m)],rep(X2,each=2)[1:(2*m-1)],type="l",xlim=c(-4,4),ylim=c(-4,4),xlab=expression(X[1]),ylab=expression(X[2])) # first draw the lines
+points(X1[1:m],X2[1:m],pch=16,col=2:6) # then the points
+plot(X1, X2,xlab=expression(X[1]),ylab=expression(X[2]),xlim=c(-4,4),ylim=c(-4,4))
+sum(I(X1 >= 0 & X2 >= 0 ))/TT
+```
+
+In the example above, sampling from the conditionals was easy, but this is again rather an exception than a rule. For this reason, one usually uses the "Metropolis-within-Gibbs" algorithm, where sampling from the conditionals is replaced by a single step of a random walk MH algorithm.
+
+Other variants of Gibbs sampling are *blocked Gibbs sampler*, where the random parameter vector is split into several sub-vectors (usually suggested by the model, e.g. all location parameters can be grouped together) and every sub-vector is simulated at once (either directly, if possible, or via a single MH step).
+
+## Output Analysis
+
+The Markov chain (and ergodic) theory above tells us that the $t$-th draw using the algorithms above converges to a draw from the target distribution as $t \to \infty$ (and that the dependence between our samples "does not matter" in the large sample limit). However, in practice we only draw a finite sequence, and the big question is: how can we tell whether we have drawn enough to have a reasonable approximation to what we want (e.g. the posterior)?
+
+In practice, one inspects the performance of an MCMC algorithm by
+
+* checking the acceptance rate,
+* visualizing graphical output, and
+    - *trace plots* of the simulated values
+* calculating diagnostic statistics
+    - autocorrelation
+
+on the generated sequence. By these means, we wish to examine that all important regions were explored and that the sequence of draws has converged to the desired distribution, i.e. that the chain has *mixed*. **In reality, we can never be sure.**
+
+## Example
+
+This example, in which we are interested about the mean and standard deviation of the heights (in inches) of students from some college, is taken from Section 6.7 of [1], but we are working with a slightly different (larger) data set. Hence I will present the (sometimes arbitrary) steps below exactly as I have taken them without ever seeing the data before, describing my line of thought -- hopefully there is some value in that. A random sample of heights of students was taken, and we assume that this variable follows $\mathcal{N}(\mu,\sigma^2)$. However, we only have access to *binned* data.
+
+```{R, message=F, warning=F}
+library(LearnBayes)
+data(studentdata)
+library(tidyverse)
+X <- studentdata %>% mutate(X = cut(Height, breaks=c(-Inf,seq(60,74,by=2),Inf))) %>% select(X)
+(binneddata <- table(X))
+```
+
+Hence we are observing multinomial data with probabilities given as functions of the unknown parameter vector $(\mu, \sigma)^\top$. For example, the probability that an observation falls into the second bin is $\Phi_{\mu, \sigma}(62) - \Phi_{\mu, \sigma}(60)$, and hence the likelihood for the grouped data is
+\[
+f(d\mid\mu,\sigma) \propto \prod_{j=1}^9 \left[ \Phi_{\mu, \sigma}(a_{j}) - \Phi_{\mu, \sigma}(a_{j-1}) \right]^{b_j}
+\]
+where $a_0 = -\infty, a_1 = 60, a_2 = 62, \ldots, a_8 = 74, a_9 = \infty$ are the bin endpoints and $b_j$ for $j=1,\ldots,9$ are the frequencies observed for each bin, and $d$ denotes the full data.
+
+We will assign the *uninformative prior* to the parameters:
+\[
+f(\mu,\sigma) = \frac{1}{\sigma}.
+\]
+This is an arbitrary but also classical choice: since $\sigma > 0$, we want to reparametrize to $\lambda = \log(\sigma)$ and after this change of variables, $1/\sigma$ will disappear from the posterior, so having it there in the first place really puts no prior information on either the mean or the variance. Hence we have
+\[
+f(\mu,\sigma \mid D=d) \propto L\big(\mu, \exp(\lambda)\big)
+\]
+The code below only defines a frame for the data and this posterior.
+
+```{R}
+dimnames(binneddata) <- NULL
+d <- list(int.lo=c(-Inf,seq(60,74,by=2)),
+       int.hi=c(seq(60,74,by=2), Inf),
+       f=as.numeric(binneddata))
+groupeddatapost <- function(theta,data){
+  dj = function(f, int.lo, int.hi, mu, sigma)
+  f * log(pnorm(int.hi, mu, sigma) -
+  pnorm(int.lo, mu, sigma))
+  mu = theta[1]
+  sigma = exp(theta[2])
+  sum(dj(data$f, data$int.lo, data$int.hi, mu, sigma))
+}
+```
+
+Now our goal is to sample from the posterior using a random walk proposal MH as coded in the `LearnBayes` library. There, the proposals are generated as
+\[
+U^{(t+1)} = X^{(t)} + s Z
+\]
+where $Z \sim \mathcal(0,\Sigma)$ and $s > 0$ is a scale parameter. So there is a bit of overparametrization for the sake of convenience (debatable). We have to choose:
+
+* starting point $(\mu^{(0)},\lambda^{(0)})^\top$
+* scale $s$
+* covariace $\Sigma$
+
+Looking at binned data, why not choose $\mu^{(0)} = 68$ as the (probably overshot) starting point. For $\lambda^{(0)}$, we want to choose it so a total majority of data is between $\mu^{(0)} \pm 2(\text{or }3) \sigma^{(0)}$, so $\sigma^{(0)} \in (2,3)$ seems to be reasonable. Due to our parametrization $\lambda = \log(\sigma)$, let's just take $\lambda^{(0)} = 1$. Let's start with the simplest $\Sigma$, which is the $2 \times 2$ identity matrix, and let's choose the scale $s$ to have a reasonable acceptance rate. I naturally started with $s=1$, which lead to too low $\bar{\alpha} = 0.001$, so I decreased and got satisfied.
+
+```{R,out.width="40%",fig.align="center"}
+start <- c(68,1)
+proposal <- list(var=diag(2),scale=0.1) # play with scale manually until good acceptance
+set.seed(517)
+fit <- rwmetrop(groupeddatapost,proposal,start,10000,d) # random walk proposal MH
+fit$accept
+plot(fit$par[,1],fit$par[,2],xlab=expression(mu),ylab=expression(lambda))
+```
+
+But looking at the plot of the resulting draws, I obviously haven't chosen the starting point correctly, because it looks like we have started in the bottom-right and worked our way to a more important part of the domain. I kind of did that on purpose, otherwise I would choose at least a lower $\mu^{(0)}$ in the first place. So let's rectify our starting point so we do not have to burn in.
+
+```{R,out.width="40%",fig.align="center"}
+start <- c(66,1.4)
+fit <- rwmetrop(groupeddatapost,proposal,start,10000,d) # random walk proposal MH
+fit$accept # still good
+plot(fit$par[,1],fit$par[,2])
+```
+
+This looks good. Let's check the trace plot and the autorcorrelation plot.
+
+```{R,out.width="40%", fig.show="hold"}
+plot(fit$par[,1],type="l",main=expression(paste("Trace plot for ",mu)))
+plot(fit$par[,2],type="l",main=expression(paste("Trace plot for ",lambda)))
+acf(fit$par[,1],main=expression(paste("ACF for ",mu))) # not so nice
+acf(fit$par[,2],main=expression(paste("ACF for ",lambda)))
+```
+
+Outputs for $\lambda$ look good, but for $\mu$ not so much. I mean, it is not a tragedy, but maybe we could improve by choosing a better $\Sigma$. Our MCMC obviously moves too little in the $\mu$ direction of the posterior, so we should aim for a higher variability in $\mu$ direction, which can be specifies by redefining e.g. $\Sigma_{11} := 2$. But actually, why don't we choose variability based on the sample we have already drawn, it is not that bad, it is just a bit inefficient w.r.t. $\mu$. But there is no harm in estimating the covariance matrix of the posterior from the drawn sample a use it to improve our MCMC sampler.
+
+```{R}
+var(fit$par)
+```
+
+This is done below. However, the acceptance rate is suddenly 95 %, which is too high. That is due to the overparametrization mentioned above and not surprising at all, we have to increase the scale $s$ to rectify. I tried $s=1$, resulting in 58 % acceptance, which is still a bit high, so I settled with $s=2$.
+
+```{R}
+proposal <- list(var=var(fit$par),scale=1)
+fit <- rwmetrop(groupeddatapost,proposal,start,10000,d) # random walk proposal MH
+fit$accept
+```
+
+Lets analyze the output again.
+
+```{R,out.width="40%", fig.show="hold"}
+plot(fit$par[,1],type="l")
+plot(fit$par[,2],type="l")
+acf(fit$par[,1])
+acf(fit$par[,2])
+```
+
+All looks perfect now. So this is our sample:
+
+```{R,out.width="33%", fig.show="hold"}
+plot(fit$par[,1],fit$par[,2])
+
+sims <- data.frame(mu = fit$par[,1], lambda = fit$par[,2])
+ggplot(sims, aes(x = mu, y = lambda)) +
+  geom_bin2d()
+
+mycontour(groupeddatapost,c(65.3,67,1.3,1.6),d,xlab="mu",ylab="log sigma")
+points(fit$par[,1],fit$par[,2])
+```
+
+So finally, we have a sample drawn from the posterior, which can be used to answer all kinds of questions about the posterior. For example, the posterior mean estimators for the parameters are:
+
+```{R}
+apply(fit$par,2,mean)
+```
+
+# Final Thoughts
+
+Bayesian approach effectively separates into two distinct problems:
+
+* choosing a model
+* approximating the posterior
+
+Here we have focused on the latter (but I have tried to give you a good motivation above for why this is of paramount importance). But the former is actually where Bayesian thinking shines: it is quite easy to build good models with Bayesian thinking, and inference on these models (usually requiring some optimization) can suggest interesting approaches to a problem at hand, even for a non-Bayesian.
+
+As sample size $|D|$ grows:
+
+* at first, we are going away from the prior, and the posterior is getting complicated
+* then, the posterior becomes more and more regular (courtesy of CLT) and the prior serves as a bit of regularization
+* eventually, the prior stops mattering
+
+In every statistical task, there are three sources of error:
+
+* data is random (vanishes with increasing data set)
+* my model is wrong (never goes away)
+* inference is inexact (vanishes with investing more computational resources)
+
+These sources of error actually add up, so there no need to for a correct model or exact inference as long as the associated errors are small compared to the randomness stemming from the data. Here, a famous quote by Tukey is in place:
+
+> Far better an approximate answer to the right question, than the exact answer to the wrong question.
+>
+> -- *John Tukey*
+
+So we shouldn't really worry too much about Bayesian analysis being only approximate, rather we should worry about something else: **silent failure**. When you use MCMC to explore the domain, you can never know whether you have found all the important regions. *Multimodal distributions* are generally problematic for sampling-based inference, *plateau regions* are generally problematic for optimization-based inference.
+
+Another downside of Bayesianism is its somehow weak theory. If the likelihood is wrong (which it alway is, otherwise there is no point in doing statistics), we have to go to large sample limits, but there the prior has a vanishing importance, so Bayesian methods provide no additional guarantees compared to frequentist methods.
+
+Sampling is not the only way to perform Bayesian inference. One can actually push Bayesian inference back to optimization (*variational* methods) or even frequentism (*empirical Bayes*). Either of the paths is usually taken in quest for computational efficiency in high-dimensional models, since sampling is expensive in high dimensions (MCMC takes us further than basic MC, but still not all the way to deal with truly *big data*)
+
+Just to touch on some of the notions from the syllabus we do not really have time to go through properly:
+
+* Hamiltonian MC and NUTS: when the basic random walk proposal MH is difficult or inefficient due to a lot of parameters, we can resort to a Gibbs sampler (or Metropolis-within-Gibbs), but there are also ways to keep exploring the space as a whole by generating proposals in a smart way, which will endorse exploration of the high-dimensional parameter space. This is the case of Hamiltonian MC of which NUTS is a further extension.
+* BUGS and STAN are packages implementing Bayesian computations in a similar fashion to how R implements e.g. generalized linear models. The crucial methodological difference between them is that
+   - BUGS uses structure of the model and Gibbs sampling whenever possible
+   - STAN rather resorts to NUTS
+STAN is probably the more modern option, with a simple interface with R in form of the R package `rstan`.
+
+Exercise 7 Bayesian Computations class implements Metropolis-within-Gibbs
+
+# References
+
+[1] Albert (2007) Bayesian Computations with R
+
+Robert & Casella (2010) Introducing Monte Carlo Methods with R
+
+Nadja Klein's course notes, HU Berlin
+
+
+
+
