@@ -1,0 +1,445 @@
+---
+title: "Week 3: Graphics and Visualization"
+subtitle: "MATH-517 Statistical Computation and Visualization"
+author: "Tomas Masak"
+date: "`r format(Sys.time(), '%b %d, %Y')`"
+#date: "September 21st 2021"
+output: beamer_presentation
+classoption: "presentation"
+theme: "Madrid"
+colortheme: "seahorse"
+footer: "Copyright (c) 2022, EPFL"
+urlcolor: blue
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE, message = FALSE, warning = FALSE)
+library(bookdown)
+library(tidyverse)
+library(data.table)
+theme_set(theme(text=element_text(size=20)))
+```
+
+## Graphics
+
+* presentation
+  - result communication
+  - decision making
+* data insight
+  - large data
+  - detect patterns
+  - find strange observations
+* code debugging
+  - input, output (even the code itself) is data
+
+## Graphics
+
+> "The simple graph has brought more information to the data analyst’s mind than any other device." -- John W. Tukey
+
+&nbsp;
+
+> "The greatest value of a picture is when it forces us to notice what we never expected to see." -- John W. Tukey
+
+&nbsp;
+
+\begin{exampleblock}{}
+\centering \textbf{One can think of graphics (and also models, for that matter) as of a low-dimensional representation for data.}
+\end{exampleblock}
+
+## Anscombe's Quartet
+
+Four data sets with
+
+* one response variable $y$
+* one regressor $x$
+
+&nbsp;
+
+```{r}
+data(anscombe) # attach data
+lm1 <- lm(y1 ~ x1, data = anscombe)
+lm2 <- lm(y2 ~ x2, data = anscombe)
+lm3 <- lm(y3 ~ x3, data = anscombe)
+lm4 <- lm(y4 ~ x4, data = anscombe)
+lm1 <- c(coef(lm1),summary(lm1)$r.squared)
+lm2 <- c(coef(lm2),summary(lm2)$r.squared)
+lm3 <- c(coef(lm3),summary(lm3)$r.squared)
+lm4 <- c(coef(lm4),summary(lm4)$r.squared)
+names(lm1) <- c("(Intercept)","x","R-squared")
+rbind(lm1,lm2,lm3,lm4)
+```
+
+## Anscombe's Quartet
+
+```{r, fig.show='hold', out.width='40%',message=F, warning=F, fig.align='center'}
+library(tidyverse)
+ggplot(data=anscombe, mapping=aes(x=x1,y=y1)) +
+  geom_point(size=3) +
+  stat_smooth(method='lm') +
+  theme(text=element_text(size=20), )
+ggplot(data=anscombe, mapping=aes(x=x2,y=y2)) +
+  geom_point(size=3) +
+  stat_smooth(method='lm') +
+  theme(text=element_text(size=20), )
+ggplot(data=anscombe, mapping=aes(x=x3,y=y3)) +
+  geom_point(size=3) +
+  stat_smooth(method='lm') +
+  theme(text=element_text(size=20), )
+ggplot(data=anscombe, mapping=aes(x=x4,y=y4)) +
+  geom_point(size=3) +
+  stat_smooth(method='lm') +
+  theme(text=element_text(size=20), )
+```
+
+## Human Height
+
+\begin{center}
+\includegraphics[width=0.9\textwidth]{../Plots/human_height.jpg}
+\end{center}
+
+## Scatterplot Extras
+
+The following features (`ggplot`'s arguments) for points (and similarly for lines)
+
+* `color`
+* `shape`
+* `size`
+* `alpha` (opacity/transparency)
+
+can be used
+
+* to include additional information (or dimensions, i.e. to include additional variables) in a scatterplot
+* to combat overplotting
+* or simply to make the plot nicer (i.e. used subjectively)
+
+## Available Shapes
+
+\begin{center}
+\includegraphics[width=0.5\textwidth]{../Plots/pch.png}
+\end{center}
+
+* `pch` is the base R argument, for `ggplot` one instead passes values into `scale_shape_manual()`
+* all shapes have attribute `color`, only some `fill`
+
+## Scatterplot: plain
+
+\footnotesize
+```{r, echo=T, out.width="60%",fig.align="center"}
+library(data.table)
+set.seed(517)
+flights <- fread("https://raw.githubusercontent.com/Rdatatable/data.table/master/vignettes/flights14.csv") %>%
+  slice_sample(n=200) 
+ggplot(data = flights,
+       mapping = aes(x = arr_delay, y = distance)) +
+  geom_point()
+```
+
+## Scatterplot: shape + color
+
+\footnotesize
+```{r, echo=T, out.width="70%",fig.align="center"}
+ggplot(data = flights, mapping = aes(x = arr_delay, y = distance,
+                                     shape = origin, fill=origin)) +
+  geom_point(size=2) + 
+  scale_fill_manual(values = c("cyan","red","green")) +
+  scale_shape_manual(values = c(21,22,24))
+```
+
+## Scatterplot: shape $\times$ color
+
+\footnotesize
+```{r, echo=T, out.width="70%",fig.align="center"}
+ggplot(data = flights, mapping = aes(x = arr_delay, y = distance, 
+                                     shape = origin, color=carrier)) +
+  geom_point(size=2) + scale_shape_manual(values = c(15,16,17))
+```
+
+## Overplotting
+
+\footnotesize
+```{r, echo=T, out.width="60%",fig.align="center"}
+set.seed(517)
+flights <- fread("https://raw.githubusercontent.com/Rdatatable/data.table/master/vignettes/flights14.csv") %>%
+  slice_sample(n=5000) 
+ggplot(data = flights, mapping = aes(x = arr_delay, y = distance,
+                                     shape = origin, fill=origin)) +
+  geom_point(size=2) + 
+  scale_fill_manual(values = c("cyan","red","green")) +
+  scale_shape_manual(values = c(21,22,24))
+```
+
+## Overplotting Remedy 1/2
+
+\footnotesize
+```{r, echo=T, fig.dim=c(18,6), out.width="100%",fig.align="center"}
+ggplot(data = flights, mapping = aes(x = arr_delay, y = distance,
+                                     shape = origin, fill=origin)) +
+  geom_point() + 
+  scale_fill_manual(values = c("cyan","red","green")) +
+  scale_shape_manual(values = c(21,22,24)) +
+  facet_wrap(~origin)
+```
+
+## Overplotting Remedy
+
+\footnotesize
+```{r, echo=T, fig.dim=c(12,4), out.width="100%",fig.align="center"}
+ggplot(data = flights, mapping = aes(x = arr_delay, y = distance)) +
+  stat_binhex() + 
+  scale_fill_gradient(low = "lightblue", high = "red") +
+  facet_wrap(~origin)
+```
+
+## Overplotting Remedies
+
+* reducing point size
+* split a single plot into multiple (done above)
+* jittering
+* opacity/transparency
+* binning (done above via `stat_binhex()`)
+* tiles
+* subsampling (done above above)
+
+Many of these options clash with clarity and space requirements or with each other (e.g. transparency distorts colors).
+
+## Example
+
+* voting records of the members of the Czech parliament in 2015
+  - $N=200$ members of the parliament
+  - certain number of votings during that period ($x_{nj} \in \{ -1,0,1 \}$ depending on whether $n$-th member voted for the $j$-th voting no/abstain/yes), but **PCA** applied and only first 2 components kept
+* additional information about party affiliation of the members
+  - `party` affiliation (7 parties in total)
+  - government `coalition` affiliation (T/F)
+  - left-wing/right-wing scale `LRscale` (on the party level)
+
+```{r}
+load("../data/cz_parliament_2015.RData")
+cz$LRscale <- as.factor(cz$LRscale)
+str(cz)
+```
+
+## Example
+
+\footnotesize
+```{r, echo=T, eval=F}
+ggplot(data = cz, mapping = aes(x = PC1, y = PC2, color=party,
+                                shape=coalition, size=LRscale)) +
+  geom_point() +
+  scale_color_manual(values=c("skyblue","orange","yellow",
+                              "red","blue","blueviolet","green3")) +
+  scale_shape_manual(values=c(16,17))
+```
+
+## Example
+
+\footnotesize
+```{r, out.width="90%",fig.align="center"}
+load("../data/cz_parliament_2015.RData")
+cz$LRscale <- as.factor(cz$LRscale)
+ggplot(data = cz, mapping = aes(x = PC1, y = PC2, color=party, shape=coalition, size=LRscale)) +
+  geom_point() +
+  scale_color_manual(values=c("skyblue","orange","yellow","red","blue","blueviolet","green3")) +
+  scale_shape_manual(values = c(16,17))
+```
+  
+## Spatial Data
+
+Complicated due to different
+
+* mathematical representations
+* data structures
+* data sources
+* data processing packages
+  - projections (sphere? plane?)
+* visualization packages
+
+(Not so) short course about visualizing spatial data [here](https://github.com/Robinlovelace/Creating-maps-in-R) (only if interested).
+
+## Mercator Projection
+
+\includegraphics[width=\textwidth]{../Plots/mercator.png}
+
+\hfill \textcolor{gray}{source: wiki}
+
+Two sources of distortion (earth is not a sphere and the projection itself), the second one visualized [here](https://en.wikipedia.org/wiki/Mercator_projection#/media/File:Worlds_animate.gif).
+
+## Russia's True Size
+
+\centering
+\includegraphics[width=0.75\textwidth]{../Plots/russia_true_size.jpg}
+
+## Geospatial Heatmap
+
+\footnotesize
+```{r, echo=T, eval=F}
+library(ggswissmaps)
+counties <- shp_df[[4]] # resolution on the level of ZIP codes
+
+avg_age <- read.csv("https://raw.githubusercontent.com/grssnbchr/thematic-maps-ggplot2/master/input/avg_age_15.csv")
+names(avg_age)[1] <- "id"
+names(avg_age)[3] <- "age"
+counties <- counties %>% mutate(id = as.numeric(id))
+newdat <- inner_join(counties, avg_age, by="id")
+library(viridis)
+ggplot(data=newdat) +
+  geom_polygon(aes(x=long, y=lat, group=group, fill=age)) +
+  geom_path(aes(x = long, y = lat, group = group),
+            color = "white", size = 0.1) +
+  scale_fill_viridis(option = "magma", direction = -1) +
+  theme_void()
+```
+
+* here counties is a data frame, longitude and latitude specify border points and Swiss counties are polygons (convex hulls of the border points)
+* `group` specifies which border points belong to which county
+* try `plot(counties$long,counties$lat, type="l")`
+
+## Geospatial Heatmap
+
+```{r, out.width="80%", fig.align="center"}
+library(ggswissmaps)
+counties <- shp_df[[4]] # resolution on the level of ZIP codes
+# now read average age data for ZIP regions
+avg_age <- read.csv("https://raw.githubusercontent.com/grssnbchr/thematic-maps-ggplot2/master/input/avg_age_15.csv")
+names(avg_age)[1] <- "id"
+names(avg_age)[3] <- "age"
+counties <- counties %>% mutate(id = as.numeric(id))
+newdat <- inner_join(counties, avg_age, by="id") # merge two data frames
+library(viridis) # just for a nicer color scale
+ggplot(data=newdat) +
+  geom_polygon(aes(x=long, y=lat, group=group, fill=age)) +
+  geom_path(aes(x = long, y = lat, group = group),
+            color = "white", size = 0.1) +
+  scale_fill_viridis(option = "magma", direction = -1) +
+  theme_void()
+```
+
+\hfill inspired by [this blogpost](https://timogrossenbacher.ch/2016/12/beautiful-thematic-maps-with-ggplot2-only/)
+
+## Good Visualization Practices
+
+* provide context (in text **and** in caption)
+* seek simplicity, clarity, etc.
+* gray scale often preferable
+  - color-blindness (friendly palettes, e.g. [Coolors](https://coolors.co/333333-666a86-95b8d1-e8ddb5-edafb8))
+* axes (scale, gaps, etc.)
+  - text of appropriate size
+* publication-specific conditions
+* be artistic!
+  - sometimes bend the rules (responsibly and justifiably)
+  
+Find inspiration in [The R Graph Gallery](https://r-graph-gallery.com/).
+
+Beware when exporting graphics.
+
+# Bad Visualization Practices
+
+## Reverted Axis
+
+\centering
+\includegraphics[width=0.9\textwidth]{../Plots/bad_plotting/1.png}
+
+## False Venn's Diagrams
+
+\centering
+\includegraphics[width=0.9\textwidth]{../Plots/bad_plotting/2.png}
+
+## Missing Baseline
+
+\centering
+\includegraphics[width=0.6\textwidth]{../Plots/bad_plotting/3.jpg}
+
+## Axis Starting at Zero
+
+\centering
+\includegraphics[width=0.9\textwidth]{../Plots/bad_plotting/4.png}
+
+## Better
+
+\centering
+\includegraphics[width=0.9\textwidth]{../Plots/bad_plotting/5.png}
+
+## Combined Effects
+
+\centering
+\includegraphics[width=0.9\textwidth]{../Plots/bad_plotting/6.png}
+
+## ...plus just Cheating
+
+\centering
+\includegraphics[width=0.9\textwidth]{../Plots/bad_plotting/7.jpg}
+
+## Double Axes
+
+\centering
+\includegraphics[width=0.9\textwidth]{../Plots/bad_plotting/8.png}
+
+* This is actually quite good, but double axes are usually problematic.
+
+## Tweaking Axis
+
+\centering
+\includegraphics[width=0.9\textwidth]{../Plots/bad_plotting/9.png}
+
+## Binning
+
+\centering
+\includegraphics[width=0.9\textwidth]{../Plots/bad_plotting/10.png}
+
+* Binning itself is not bad, but it is basically a variable (axis) transformation, so beware.
+
+## Different Kinds of Binning
+
+\centering
+\includegraphics[width=0.9\textwidth]{../Plots/bad_plotting/11.png}
+
+## Total
+
+\centering
+\includegraphics[width=0.9\textwidth]{../Plots/bad_plotting/12.png}
+
+## Relative
+
+\centering
+\includegraphics[width=0.9\textwidth]{../Plots/bad_plotting/13.png}
+
+## Useless 3D
+
+\centering
+\includegraphics[width=0.9\textwidth]{../Plots/bad_plotting/14.png}
+
+## Better 2D
+
+\centering
+\includegraphics[width=0.9\textwidth]{../Plots/bad_plotting/15.png}
+
+## Total vs. Relative Again
+
+\centering
+\includegraphics[width=0.7\textwidth]{../Plots/bad_plotting/16.png}
+
+## Missing Axis & Misguidance
+
+\centering
+\includegraphics[width=0.9\textwidth]{../Plots/bad_plotting/17.png}
+
+## Asignment
+
+**Small project [20%]**. Deadline on Week 6.
+
+The goal of this project is *data exploration*. Find an interesting (in the sense it interests you!) data set and
+
+* explore the data
+* describe the data
+* visualize the data
+* lay out some questions about the data based on your exploration
+* use more detailed visualization techniques to hint answers
+
+The first step should be done individually. Then you can form groups of 2-3 and pick up the most interesting data set and do the rest. See [Course organization](../Manuals/01_Organization.html) for more details.
+
+## Exercise
+
+Almond will show some data repositories.
+
+1. Choose a scatterplot above (say the one on slide 10) and try to reproduce it using base R functions `plot()` instead of `ggplot()` and add legend manually using `legend()`.
+
+2. Find and obtain spatial boundary files of administrative regions of your home country (or use some other country, if problematic). Produce a geospatial heatmap of the country, using some external variable for the color fill argument (e.g. specific election results or election participation, mortality rates, etc.).

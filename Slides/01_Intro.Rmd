@@ -382,37 +382,6 @@ Fit:& $\widehat{\beta} = (X^\top X)^{-1} X^\top Y$ assuming $X$ is full-rank\\
 \end{columns}
 ```
 
-## Our Workflow
-
-* open RStudio
-
-* load some packages
-
-* work in a (R Markdown) script, potentially inside a project
-
-* save your progress
-
-* push your changes to GitHub
-
-[Bookdown](https://bookdown.org/) -- a lot of interesting books written in R Markdown, including one of the references for this course, the [R for Data Science](https://r4ds.had.co.nz/index.html) book co-authored by Hadley Wickham.
-
-## Good Coding Practices
-
-* consistency (following a certain style)
-* indentation
-* naming conventions -- short but informative variable/function names  
-  - `camelCase`
-  - `snake_case` -- my personal preference
-  - `dot.case` -- not bad, but some languages will not allow it
-  - others such as `PascalCase` or `kebab-case` are inferior
-* simplicity
-* comments (more the merrier!)
-* load packages at the top
-* loading data comes next (possibly in a separate script)
-* functions come next (possibly in a separate script)
-* use `set.seed()` if RNG present
-* re-run with empty environment
-
 ## Assignment
 
 "**Assignment**" = **mandatory**, counts towards the final grade [5 %]

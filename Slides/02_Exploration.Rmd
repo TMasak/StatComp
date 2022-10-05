@@ -405,13 +405,14 @@ flights %>%
 
 * there needs to be a linearly ordered variable, typically time
 ```{r, echo=F, out.width='70%', fig.align='center', warning=F}
-# this is for most parts a lazy and wrong way of manipulating the data, ideally one should transform the poorly formatted `covid` data frame into a better formatted one using `tidy` syntax and not discarding any information
+# this is for most parts a lazy and wrong way of manipulating the data, check out the lecture notes for a better solution
 covid <- read.csv("https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_time_series/time_series_covid19_confirmed_global.csv")
 my_dat <- covid[,-(1:4)] %>% as.matrix() %>% t() %>% as.data.frame()
 names(my_dat) <- covid$Country.Region
-my_dat$date <- seq(as.Date("2022-01-20"), by="1 day", length.out=dim(my_dat)[1])
+my_dat$date <- seq(as.Date("2022-01-22"), by="1 day", length.out=dim(my_dat)[1])
+names(my_dat)[103] <- "Czech Republic"
 
-my_dat %>% select(date, Czechia, Germany, Italy, Switzerland) %>% 
+my_dat %>% select(date, "Czech Republic", Germany, Italy, Switzerland) %>%
   pivot_longer(-date) %>%
   ggplot(aes(x=date, y=value, colour=name)) +
     geom_line() +
@@ -607,20 +608,12 @@ points(x,dnorm(x,mean(mydat$skewed_right),sd(mydat$skewed_right)),type="l")
   - exploratory $\ldots$ helps you understand the patterns
   - explanatory $\ldots$ designed to communicate your understanding
 
-## Exercises - Part I
+## Exercises
 
 1. Freedman (2009) Statistical Models, Example 4, p. 75:    
 Suppose $Y$ consists of 100 independent $\mathcal{N}(0,1)$ random variables. This is pure noise. Let $X \in \mathbb{R}^{100 \times 50}$ be the design matrix with independent $\mathcal{N}(0,1)$ variables (just more noise). We regress $Y$ on $X$ (i.e. no intercept). The coefficient of determination $R^2$ will be about 50/100=0.5. Suppose we test each of the 50 coefficients at the 10 % level and keep only the "significant" variables. There will be about $50 \times 0.1 = 5$ keepers (just by chance). Running the regression on the keepers only (again, without intercept), we are likely to get a decent $R^2$ (like 0.2 -- decent by the social-science standards) and dazzling $t$-statistics. Run a couple of simulations and see for yourself.
 
-2. The "Example of Peeking" above is an example of a small simulation study, checking whether a designed test strategy respects the nominal level $\alpha = 0.05$ or not. Incorporate further levels of peeking in order to mimic the power-posing study.
-
-## Exercises - Part II
-
-3. For one of the two exercises above:
-  - write down your results in R Markdown
-  - produce an HTML report
-  - push both the `.Rmd` and `.html` files to your GitHub repo
-  - replace your Moodle submission for Assignment one with the (clickable) link to the HTML file (as described in the course requirements)
+2. The "Example of Peeking" above is an example of a small simulation study, checking whether a designed test strategy respects the nominal level $\alpha = 0.05$ or not. Incorporate further levels of peeking in order to mimic the power-posing study. Write your results using Markdown and push them to your GitHub repository.
 
 ## References
 

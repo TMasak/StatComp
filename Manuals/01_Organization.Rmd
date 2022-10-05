@@ -56,7 +56,7 @@ The final grade will consist of
 
 ## 2.1 Assignments
 
-There will be 8 assignments during the semester, graded as described above.
+There will be 8 assignments during the semester, graded as described above. Assignments can be found toward the end of the slides (but not every week there is an assignment), just before Exercises (those will be available every week towards the end of the slides, but those are not mandatory, only recommended).
 
 ## 2.2 Small Project
 
@@ -72,7 +72,7 @@ The goal of this project is *data exploration*. Find an interesting (in the sens
 
 The first step should be done individually. Then you can form groups and pick up the most interesting data set and perform the subsequent steps. If you realize you have chosen too simple data set (or one that you don't like), you don't need to scrap your work. Instead, simply move to a different data set and have your project composed of multiple data sets.
 
-Note that the purpose of this project is to play around, demonstrating your data exploration, wrangling and visualization skills. Hopefully, you will also find scientifically interesting questions or questions of personal interest (e.g. does ball possession matter in a game of football?), but even if not, you can still be awarded full points, as long as you avoid Kaggle data sets that has been analyzed zillion times before. In that case you do end up with such a data set for any reason, try to avoid reading old solutions, and rather focus on utilizing techniques from this course in your own original way and to the best of your abilities.
+Note that the purpose of this project is to play around, demonstrating your data exploration, wrangling and visualization skills. Hopefully, you will also find scientifically interesting questions or questions of personal interest (e.g. does ball possession matter in a game of football?), but even if not, you can still be awarded full points, as long as you avoid Kaggle data sets that have been analyzed zillion times before. In that case you do end up with such a data set for any reason, try to avoid reading old solutions, and rather focus on utilizing techniques from this course in your own original way and to the best of your abilities.
 
 **Groups** can be of size of either 2 or 3 people. The size will *not* matter w.r.t. to grading. However, a group of size 3 will have one additional task to do: as part of their Moodle submission, every team member will individually include a short paragraph describing contributions of every individual member of the team. This is not to be discussed among the team members, as it serves as a safeguard. Regardless of their individual contributions, each member of the team will receive the same grade, apart from where this would be extremely unfair. Such cases will be discussed personally. In case of any team-work problems, the students are encouraged to seek advice (mostly as a group) from the teachers (mostly during the exercise classes).
 
@@ -127,6 +127,19 @@ You will soon learn how to download the up-to-date materials via RStudio, which 
 **Moodle** will only be used for its forum and to formally submit assignments (and projects) are receive back the grades (see the next section). There will be no Piazza or video recordings available for this course.
 
 # 5. Handing-in Assignments and Projects
+
+Submissions will (mostly) be HTML documents and corresponding R Markdown files available on students' GitHub repos. Those files must provide:
+
+* the HTML file must contain no code (mine do only for educational purposes)
+* the code in the `.Rmd` file is well commented
+* data and their source is described in the introduction
+* main section(s) contain text and graphical outputs
+* every plot has a self-explanatory caption and is referenced from and described in the main text
+* in the main text describe obstacles you have encountered and how you dealt with them
+* reference all work of someone else (e.g. when copying and modifying code from Stack Overflow)
+* discussion summarizing what you have achieved and what additional questions and/or future work your analysis spawns
+
+**TODO: The remainder of this section will have to be changed slightly** now that students are working in private repos.
 
 Almost everything will be done in GitHub. After completing the assignment from Week 1 (i.e. following [this manual](02_Github.html)), you should
 
