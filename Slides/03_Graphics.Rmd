@@ -202,45 +202,25 @@ ggplot(data = flights, mapping = aes(x = arr_delay, y = distance)) +
 
 Many of these options clash with clarity and space requirements or with each other (e.g. transparency distorts colors).
 
-## Example
+## Visualizing Variance
 
-* voting records of the members of the Czech parliament in 2015
-  - $N=200$ members of the parliament
-  - certain number of votings during that period ($x_{nj} \in \{ -1,0,1 \}$ depending on whether $n$-th member voted for the $j$-th voting no/abstain/yes), but **PCA** applied and only first 2 components kept
-* additional information about party affiliation of the members
-  - `party` affiliation (7 parties in total)
-  - government `coalition` affiliation (T/F)
-  - left-wing/right-wing scale `LRscale` (on the party level)
+\centering
+\includegraphics[width=0.9\textwidth]{../Plots/variance_plotting/line_ok.png}
 
-```{r}
-load("../data/cz_parliament_2015.RData")
-cz$LRscale <- as.factor(cz$LRscale)
-str(cz)
-```
+## Visualizing Variance (Bad)
 
-## Example
+\centering
+\includegraphics[width=0.9\textwidth]{../Plots/variance_plotting/line_bad.png}
 
-\footnotesize
-```{r, echo=T, eval=F}
-ggplot(data = cz, mapping = aes(x = PC1, y = PC2, color=party,
-                                shape=coalition, size=LRscale)) +
-  geom_point() +
-  scale_color_manual(values=c("skyblue","orange","yellow",
-                              "red","blue","blueviolet","green3")) +
-  scale_shape_manual(values=c(16,17))
-```
+## Visualizing Variance
 
-## Example
+\centering
+\includegraphics[width=0.9\textwidth]{../Plots/variance_plotting/bands.png}
 
-\footnotesize
-```{r, out.width="90%",fig.align="center"}
-load("../data/cz_parliament_2015.RData")
-cz$LRscale <- as.factor(cz$LRscale)
-ggplot(data = cz, mapping = aes(x = PC1, y = PC2, color=party, shape=coalition, size=LRscale)) +
-  geom_point() +
-  scale_color_manual(values=c("skyblue","orange","yellow","red","blue","blueviolet","green3")) +
-  scale_shape_manual(values = c(16,17))
-```
+## Visualizing Variance
+
+\centering
+\includegraphics[width=0.9\textwidth]{../Plots/variance_plotting/boxplots.png}
   
 ## Spatial Data
 
@@ -438,8 +418,84 @@ The first step should be done individually. Then you can form groups of 2-3 and 
 
 ## Exercise
 
-Almond will show some data repositories.
+Some data repositories listed on following slides.
 
 1. Choose a scatterplot above (say the one on slide 10) and try to reproduce it using base R functions `plot()` instead of `ggplot()` and add legend manually using `legend()`.
 
-2. Find and obtain spatial boundary files of administrative regions of your home country (or use some other country, if problematic). Produce a geospatial heatmap of the country, using some external variable for the color fill argument (e.g. specific election results or election participation, mortality rates, etc.).
+2. Consider the Simpsons IMDB ratings plot above. Choose say 3 of your favorite TV shows, download data from the [IMDB database](https://www.imdb.com/interfaces/) a produce a plot similar to the Simpsons plot above (i.e. variances captured with boxplots) using `ggplot()` depicting all 3 TV shows.
+
+3. Find and obtain spatial boundary files of administrative regions of your home country (or use some other country, if problematic). Produce a geospatial heatmap of the country, using some external variable for the color fill argument (e.g. specific election results or election participation, mortality rates, etc.).
+
+## One more Scatterplot Example
+
+* voting records of the members of the Czech parliament in 2015
+  - $N=200$ members of the parliament
+  - certain number of votings during that period ($x_{nj} \in \{ -1,0,1 \}$ depending on whether $n$-th member voted for the $j$-th voting no/abstain/yes), but **PCA** applied and only first 2 components kept
+* additional information about party affiliation of the members
+  - `party` affiliation (7 parties in total)
+  - government `coalition` affiliation (T/F)
+  - left-wing/right-wing scale `LRscale` (on the party level)
+
+```{r}
+load("../data/cz_parliament_2015.RData")
+cz$LRscale <- as.factor(cz$LRscale)
+str(cz)
+```
+
+## One more Scatterplot Example
+
+\footnotesize
+```{r, echo=T, eval=F}
+ggplot(data = cz, mapping = aes(x = PC1, y = PC2, color=party,
+                                shape=coalition, size=LRscale)) +
+  geom_point() +
+  scale_color_manual(values=c("skyblue","orange","yellow",
+                              "red","blue","blueviolet","green3")) +
+  scale_shape_manual(values=c(16,17))
+```
+
+## One more Scatterplot Example
+
+\footnotesize
+```{r, out.width="90%",fig.align="center"}
+load("../data/cz_parliament_2015.RData")
+cz$LRscale <- as.factor(cz$LRscale)
+ggplot(data = cz, mapping = aes(x = PC1, y = PC2, color=party, shape=coalition, size=LRscale)) +
+  geom_point() +
+  scale_color_manual(values=c("skyblue","orange","yellow","red","blue","blueviolet","green3")) +
+  scale_shape_manual(values = c(16,17))
+```
+
+## Some links to open data
+
+[fivethirtyeight](https://data.fivethirtyeight.com/): article data of Nate Silver's data journalism platform freely available (see also R package [fivethirtyeight](https://cran.r-project.org/web/packages/fivethirtyeight/index.html))
+
+[data-is-plural](https://www.data-is-plural.com/): weekly newsletter of datasets by Jeremy Singer-Vine
+
+[re3data](https://www.re3data.org/): Registry of research data repositories
+
+[openml datasets](https://www.openml.org/): many uniformly formatted datasets for training machine learning models -- however, not always good descriptions available
+
+[Worldbank Datacatalog](https://datacatalog.worldbank.org/): the World Bank data catalogue
+
+[UK Data Service](https://beta.ukdataservice.ac.uk/datacatalogue/studies#!?Search=&Rows=10&Sort=0&DateFrom=1753&DateTo=2018&AccessFacet=Open&Page=1): UK’s largest collection of social, economic and population data resources (filter for open data) or also [data.gov.uk](https://www.data.gov.uk/)
+
+[ICPSR](https://www.icpsr.umich.edu): unit within the Institute for Social Research at the University of Michigan, social and behavioral research. In particular including [replication datasets](https://www.openicpsr.org/openicpsr/) for published studies.
+
+[govdata](https://www.govdata.de/): Open Government - German administrative data freely accessible
+
+## Some more
+
+[gapminder](https://www.gapminder.org/): "an independent educational non-proﬁt ﬁghting global misconceptions"; collection and vizualisation of datasets concerning gobal developement
+
+[nature.com](https://www.nature.com/sdata/): peer-reviewed, open-access journal for descriptions of datasets (broad range of natural science disciplines)
+
+[NIH (National Institute of Health) Data Sharing Repositories](https://www.nlm.nih.gov/NIHbmic/domain_specific_repositories.html): overview on different thematically sorted medical databases
+
+[UCI Machine Learning Repository](https://archive.ics.uci.edu/ml/datasets.php) or the new [beta version](https://archive-beta.ics.uci.edu/): containing various datasets -- however, sometimes with a little few description
+
+[data.bris Research Data Repository](https://data.bris.ac.uk/data/): Data repository of the University of Bristol
+
+[bellingcat TikTok Hashtag analysis tool](https://www.bellingcat.com/resources/how-tos/2022/05/11/this-new-tool-lets-you-analyse-tiktok-hashtags/): Didn't try, don't know how easy.
+
+_... no systematic selection. Much more out there_
