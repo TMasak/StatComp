@@ -97,6 +97,23 @@ ggplot(data=anscombe, mapping=aes(x=x4,y=y4)) +
 \includegraphics[width=0.9\textwidth]{../Plots/human_height.jpg}
 \end{center}
 
+## Plot Dimension
+
+```{r, out.width="45%",fig.show='hold'}
+library(lattice)
+x <- 1:30/31
+y1 <- cos(2*pi*x)
+y2 <- x
+y <- outer(y1,y2)
+persp(x=x,y=x,z=y,theta=180)
+levelplot(y)
+
+y2 <- sin(4*pi*x)
+y <- outer(y1,y2)
+persp(x=x,y=x,z=y,theta=180)
+levelplot(y)
+```
+
 ## Scatterplot Extras
 
 The following features (`ggplot`'s arguments) for points (and similarly for lines)
@@ -211,6 +228,8 @@ Many of these options clash with clarity and space requirements or with each oth
 
 \centering
 \includegraphics[width=0.9\textwidth]{../Plots/variance_plotting/line_bad.png}
+
+* the grey lines should be much thinner and colored so we can relate them to the colored means (and x-axis added)
 
 ## Visualizing Variance
 
@@ -402,30 +421,6 @@ Beware when exporting graphics.
 \centering
 \includegraphics[width=0.9\textwidth]{../Plots/bad_plotting/17.png}
 
-## Asignment
-
-**Small project [20%]**. Deadline on Week 6.
-
-The goal of this project is *data exploration*. Find an interesting (in the sense it interests you!) data set and
-
-* explore the data
-* describe the data
-* visualize the data
-* lay out some questions about the data based on your exploration
-* use more detailed visualization techniques to hint answers
-
-The first step should be done individually. Then you can form groups of 2-3 and pick up the most interesting data set and do the rest. See [Course organization](../Manuals/01_Organization.html) for more details.
-
-## Exercise
-
-Some data repositories listed on following slides.
-
-1. Choose a scatterplot above (say the one on slide 10) and try to reproduce it using base R functions `plot()` instead of `ggplot()` and add legend manually using `legend()`.
-
-2. Consider the Simpsons IMDB ratings plot above. Choose say 3 of your favorite TV shows, download data from the [IMDB database](https://www.imdb.com/interfaces/) a produce a plot similar to the Simpsons plot above (i.e. variances captured with boxplots) using `ggplot()` depicting all 3 TV shows.
-
-3. Find and obtain spatial boundary files of administrative regions of your home country (or use some other country, if problematic). Produce a geospatial heatmap of the country, using some external variable for the color fill argument (e.g. specific election results or election participation, mortality rates, etc.).
-
 ## One more Scatterplot Example
 
 * voting records of the members of the Czech parliament in 2015
@@ -466,7 +461,31 @@ ggplot(data = cz, mapping = aes(x = PC1, y = PC2, color=party, shape=coalition, 
   scale_shape_manual(values = c(16,17))
 ```
 
-## Some links to open data
+## Asignment
+
+**Small project [20%]**. Deadline on Week 6.
+
+The goal of this project is *data exploration*. Find an interesting (in the sense it interests you!) data set and
+
+* explore the data
+* describe the data
+* visualize the data
+* lay out some questions about the data based on your exploration
+* use more detailed visualization techniques to hint answers
+
+The first step should be done individually. Then you can form groups of 2-3 and pick up the most interesting data set and do the rest. See [Course organization](../Manuals/01_Organization.html) for more details.
+
+## Exercise
+
+1. Some data repositories listed on following slides will be explored.
+
+2. Consider the Simpsons IMDB ratings plot above. Choose say 3 of your favorite TV shows, download data from the [IMDB database](https://www.imdb.com/interfaces/) a produce a plot similar to the Simpsons plot above (i.e. variances captured with boxplots) using `ggplot()` depicting all 3 TV shows.
+
+3. Find and obtain spatial boundary files of administrative regions of your home country (or use some other country, if problematic). Produce a geospatial heatmap of the country, using some external variable for the color fill argument (e.g. specific election results or election participation, mortality rates, etc.).
+
+4. Choose a scatterplot above (say the one on slide 10) and try to reproduce it using base R functions `plot()` instead of `ggplot()` and add legend manually using `legend()`.
+
+## Exercise: Some Links to Open Data
 
 [fivethirtyeight](https://data.fivethirtyeight.com/): article data of Nate Silver's data journalism platform freely available (see also R package [fivethirtyeight](https://cran.r-project.org/web/packages/fivethirtyeight/index.html))
 
@@ -484,7 +503,7 @@ ggplot(data = cz, mapping = aes(x = PC1, y = PC2, color=party, shape=coalition, 
 
 [govdata](https://www.govdata.de/): Open Government - German administrative data freely accessible
 
-## Some more
+## Exercise: Some more
 
 [gapminder](https://www.gapminder.org/): "an independent educational non-proﬁt ﬁghting global misconceptions"; collection and vizualisation of datasets concerning gobal developement
 
