@@ -9,6 +9,12 @@
 Please read up on [the course
 organization](https://htmlpreview.github.io/?https://github.com/TMasak/StatComp/blob/master/Manuals/01_Organization.html).
 
+For questions, try to use the Moodle forum, if appropriate (often
+answers can be helpful for other students as well), or contact
+[me](https://people.epfl.ch/tomas.masak) (for lecture-related) or [the
+TA](https://people.epfl.ch/almond.stoecker/?lang=en) (for exercise- or
+assignment-related) directly.
+
 All course materials will gradually come here, in this repo. This
 includes:
 
@@ -42,8 +48,9 @@ The procedure above only works for public repos, like this one. For your
 private repos, you need to first need to view the raw HTML code ([like
 here](https://raw.githubusercontent.com/TMasak/StatComp/master/Manuals/02_Github.html))
 and then append your link (which will look substantially different in
-case of your private repos) with the preview string above. **Please use
-this for assignment submission purposes.**
+case of your private repos - there will be a special token generated at
+the end of it) with the preview string above. The token is time limited,
+so please do not use this for Moodle submissions.
 
 ## Acknowledgements
 
