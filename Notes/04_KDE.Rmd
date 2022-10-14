@@ -418,23 +418,3 @@ plot(density(faithful$eruptions,bw=my_bw),main=paste("bw =",my_bw," & ","df =",r
 # References
 
 [H. Wickham's "KDE in R" paper](http://vita.had.co.nz/papers/density-estimation.html)
-
-# Assignment
-
-`ggplot2`'s `geom_smooth()` can use any smoother provided to it as a function, but by default it uses `loess()` (from the base R distribution) or `mgcv`'s `gam()` (using spline smoothing, which we will not cover in this course)
-
-program your own version of local linear regression smoother using the tricube kernel ($\propto 1 - |x|^3$) and compare it's behavior to `loess()` (which should be exactly the local linear regression with a tricube kernel, but who knows. Apparently `loess` returns a spline smoother of what would be computed using LOESS of Cleveland, which is equivalent to NW estimator)
-
-* Simulation study: On the slide "Bandwidth > Kernel" a claim is made, but only a visual evidence is given. Check out for yourself whether the claim is true.
-  - Compare different kernels for KDE, draw data from a Gaussian mixture and try KDE for Epanechnikov, Gaussian, Tricube and Rectangular kernels. Which one leads to the smallest MISE?
-  - Display your results for sample sizes $n=50,100,200,500$. The bandwidth $h$ is a nuissance parameter here: calculate everything on a grid of values for $h$ and always choose the minimum attained error.
-
-Simulation study: how much better is a 2-step local bw selection compared to a reference method?
-
-Simulation study: probe the $n^{-4/5}$ rate for kernel density estimators
-
-Programm a KDE smoother using FFT yourself.
-
-KDE and Kernel Regression are interesting for projects in general. We only touch the surface, there is much more to be explored, and potential non-trivial simulation studies are everywhere, it also really fits the spirit of this course. The way to make such a project a top-project would be to make a survey like the Wickham's one about local linear estimators.
-
-Omelka E12 ma peknou simulacni studii porovnavajici ruzne bandwidth selection strategies.
