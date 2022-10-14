@@ -1,0 +1,470 @@
+---
+title: "Week 4: Kernel Density Estimation"
+subtitle: "MATH-517 Statistical Computation and Visualization"
+author: "Tomas Masak"
+date: "`r format(Sys.time(), '%b %d, %Y')`"
+#date: "September 21st 2021"
+output: beamer_presentation
+classoption: "presentation"
+theme: "Madrid"
+colortheme: "seahorse"
+footer: "Copyright (c) 2022, EPFL"
+urlcolor: blue
+header-includes:
+  - \newcommand{\E}{\mathbb{E}}
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE, message = FALSE, warning = FALSE)
+```
+
+## The Problem
+
+**Setup**: $X_1,\ldots,X_n$ is a random sample from a density $f(x)$
+
+**Goal**: Estimate $f$ nonparametrically.
+
+We already know of **histogram**, which requires a specification of
+
+* *origin* and *binwidth*, or
+* *breaks* - more general, but non-equidistant binning is bad anyway, so think only about origin and bindwidth
+
+**Runnning Ex.**: Yellowstone's Old Faithful geyser - `faithful` data:
+
+* `waiting` - time between eruptions
+* `eruptions` - duration of the eruptions
+
+## Basic Histogram
+
+\tiny
+```{r, echo=T, fig.dim = c(8,4)}
+data(faithful)
+par(mfrow=c(1,2))
+hist(faithful$eruptions, probability=T, main = "Eruption duration", xlab="time [min]")
+hist(faithful$waiting, probability=T, main = "Waiting time", xlab="time [min]")
+```
+
+* `breaks` specified, so a rule of thumb used to choose origin and binwidth
+
+## Changin Origin and Binwidth
+
+\tiny
+```{r, echo=T, fig.dim = c(10,2)}
+par(mfrow=c(1,4), mar = c(3.2, 3, 1.6, 0.2)) # reduce the white space around individual plots
+hist(faithful$eruptions, probability=T, main="Origin at 1.5");
+hist(faithful$eruptions, breaks=seq(1.4,5.4,by=0.5), probability=T, main="Origin at 1.4", xlab="time [min]")  
+hist(faithful$eruptions, breaks=seq(1.3,5.3,by=0.5), probability=T, main="Origin at 1.3", xlab="time [min]") 
+hist(faithful$eruptions, breaks=seq(1.2,5.2,by=0.5), probability=T, main="Origin at 1.2", xlab="time [min]")
+```
+
+```{r, echo=T, fig.dim = c(10,2)}
+par(mfrow=c(1,4), mar = c(3.2, 3, 1.6, 0.2))
+hist(faithful$eruptions, probability=T, main="Binwidth=0.5")
+hist(faithful$eruptions, breaks=seq(1.5,5.5,by=0.25), probability=T, main="Binwidth=0.25") 
+hist(faithful$eruptions, breaks=seq(1.5,5.5,by=0.1), probability=T, main="Binwidth=0.1") 
+hist(faithful$eruptions, breaks=seq(1.5,5.5,by=0.01), probability=T, main="Binwidth=0.01")
+```
+
+## Issues with Histogram
+
+Histogram is great for quick visualization, but does not pass as a density estimator.
+
+* *origin* is completely arbitrary
+* *binwidth* relates to smoothness of *f*, but histogram cannot be smooth anyway
+
+Let us now address these two issues by a naive version of kernel density estimation (KDE).
+
+\bigskip
+Prerequisite: empirical (cumulative) distribution function (ECDF):
+$$\widehat{F}_n(x) = \frac{1}{n} \sum_{i=1}^n \mathbb{I}_{[X_i \leq x]}$$
+
+## ECDF
+
+\footnotesize
+```{r, echo=T, fig.dim = c(8,2)}
+edf_plot <- function(N){
+  X <- rnorm(N)
+  EDF <- ecdf(X)
+  plot(EDF)
+  x <- seq(-4,4,by=0.01)
+  points(x,pnorm(x),type="l",col="red")
+}
+set.seed(517)
+par(mfrow=c(1,2), mar=c(2,2,1,1))
+edf_plot(12)
+edf_plot(50)
+```
+
+## Naive KDE
+
+* The ECDF $\widehat{F}_n(x) = \frac{1}{n} \sum_{i=1}^n \mathbb{I}_{[X_i \leq x]}$ is an estimator of $F$
+  - by [Glivenko-Cantelli theorem](https://en.wikipedia.org/wiki/Glivenko%E2%80%93Cantelli_theorem) uniformly almost surely consistent: $$\mathrm{sup}_x | \widehat{F}(x) - F(x) | \stackrel{a.s.}{\to} 0$$
+
+* $f$ is the derivative $F$: $f(x) = \lim_{h \to 0_+} \frac{F(x+h) - F(x-h)}{2h}$
+
+* Fix $h = h_n$ as something small depending on $n$ and plug it in:
+
+$$ \widehat{f}(x) = \frac{\widehat{F}_n(x+h_n) - \widehat{F}_n(x-h_n)}{2h_n} $$
+
+  - we need $h_n \to 0_+$ for $n \to 0$ in order to have any hope in consistency
+
+## Consistency
+
+* $\E \widehat{f}(x) = \frac{F(x+h_n) - F(x-h_n)}{2h_n} \to f(x) \quad\text{if}\quad h_n \to 0_+$
+
+* since $\widehat{f}(x) = \frac{1}{2 n h_n} \sum_{i=1}^n \underbrace{\mathbb{I}_{\big[X_i \in (x-h_n, x+h_n]\big]}}_{Ber\big(F(x+h_n) - F(x-h_n)\big)}$:
+
+$$
+\begin{split}
+\mathrm{var}\left(\widehat{f}(x)\right) &= \frac{1}{4 n h_n^2} \big[F(x+h_n) - F(x-h_n)\big]\big[1 - F(x+h_n) + F(x-h_n)\big] \\
+&= \frac{F(x+h_n) - F(x-h_n)}{2 h_n} \frac{1 - F(x+h_n) + F(x-h_n)}{2 n h_n} \to 0 
+\end{split}
+$$
+$\Rightarrow$ consistency if $h_n \to 0$ and $n h_n \to \infty$
+
+## Naive KDE $\equiv$ Moving Histogram
+
+* when *binwidth* for the histogram is taken as $2 h$, the naive KDE gives exactly the histogram value in the middle of every bin
+  - *origin* does not matter anymore
+
+```{r, echo=F, fig.dim = c(8,3)}
+kde_hist <- function(bw){
+# `bw` = bandwidth for KDE = 2-times binwidth for histogram = `binw`
+  binw <- 2*bw
+  br <- seq(1.5,5.5,by=binw)
+  temp <- density(faithful$eruptions, kernel="rectangular", bw=bw/sqrt(3))
+  plot(temp,lwd=2,col=4, main=paste0("bandwidth = ",bw,", binwidth = ", binw), xlab="")
+  hist(faithful$eruptions, freq=FALSE, breaks=br, add=T, main="")
+  rug(jitter(faithful$eruptions))
+}
+par(mfrow=c(1,2),mar=c(2,2,1,2))
+kde_hist(0.5)
+kde_hist(0.25)
+```
+
+## Naive KDE Rewritten
+
+The naive KDE can be written as
+$$
+\begin{split}
+\widehat{f}(x) &= \frac{1}{2 n h_n} \sum_{i=1}^n \mathbb{I}_{\big[X_i \in (x-h_n, x+h_n]\big]}\\
+&= \frac{1}{2 n h_n} \sum_{i=1}^n \mathbb{I}_{\big[1 \leq \frac{X_i - x}{h_n} \leq 1]\big]} \\
+&= \frac{1}{n h_n} \sum_{i=1}^n K\left(\frac{X_i - x}{h_n} \right)
+\end{split}
+$$
+where $K(\cdot)$ is the density of $U[-1,1]$.
+
+**Next step**: replace $K(\cdot)$ for something else.
+
+## KDE - Definition and Properties
+
+\begin{exampleblock}{}
+\textbf{Definition.} KDE of $f$ based on $X_1,\ldots,X_N$ is
+$$\widehat{f}(x) = \frac{1}{n h_n} \sum_{i=1}^n K\left(\frac{X_i - x}{h_n} \right),$$
+where the \textbf{kernel} $K(\cdot)$ satisfies:
+\begin{columns}
+\column{0.5\textwidth}
+\begin{enumerate}
+\item $K(x) \geq 0$ for all $x \in \mathbb{R}$ \\
+\item $K(- x) = K(x)$ for all $x \in \mathbb{R}$ \\
+\item $\int_\mathbb{R} K(x) d x = 1$
+\end{enumerate}
+\column{0.5\textwidth}
+\begin{enumerate}
+\item $\lim_{|x| \to \infty} |x| K(x) = 0$ \\
+\item $\sup_x |K(x)| < \infty$
+\end{enumerate}
+\end{columns}
+\end{exampleblock}
+
+* $K(\cdot)$ is usually taken to be a density, and the assumptions
+  - 1-3 hold if it is symmetric
+  - 4 holds if it has a finite absolute moment
+  - 5 holds if it is uniformly bounded
+* if $h_n \to 0$ and $n h_n \to \infty$ we have pointwise consistency
+  - we will show this in a bit
+  - also uniform consistency, but tricky to show
+
+## Common Kernels
+
+\footnotesize
+
+| Kernel Name      | Formula |
+| ----------- | ----------- |
+| Epanechnikov      | $K(x) \propto (1-x^2) \mathbb{I}_{[|x| \leq 1]}$       |
+|   Tricube (a.k.a. Triweight)   | $K(x) \propto (1- |x|^3)^3 \mathbb{I}_{[|x| \leq 1]}$       |
+|  Gaussian     | $K(x) \propto \exp(-x^2/2)$       |
+| ... | ... |
+
+
+```{r, out.width='60%',echo=F, fig.align='center'}
+knitr::include_graphics('../Plots/kernels.png')
+```
+
+## Bandwidth > Kernel
+
+While there is some improvement when not using the naive rectangular kernel, choosing good bandwidth $h$ is much more important.
+
+\bigskip
+\tiny
+```{r, echo=T, fig.dim=c(10,2.5)}
+# This is only a handle, not a proper function! Why?
+plot_kdes <- function(bw){
+  plot(density(faithful$eruptions, kernel="gaussian", bw=bw),
+       main=paste("BW = ",bw,sep=""), xlab="time [min]")
+  lines(density(faithful$eruptions, kernel="epanechnikov", bw=bw), col=4)
+  lines(density(faithful$eruptions, kernel="rectangular", bw=bw), col=2)
+  legend("topright", col=c(1, 4, 2), lty=1, legend=c("Gauss", "Epan", "rect"))
+}
+par(mfrow=c(1,4), mar = c(3.2, 3, 1.6, 0.2))
+plot_kdes(1); plot_kdes(0.5); plot_kdes(0.25); plot_kdes(0.1)
+```
+
+## Bandwidth
+
+* the bandwidth $h$ is a *tuning parameter* and needs to be chosen somehow in practice
+  - $h$ small $\rightarrow$ wiggly estimator
+  - $h$ large $\rightarrow$ slowly-varying estimator
+
+```{r, fig.dim=c(10,4)}
+par(mfrow=c(1,1), mar = c(3.2, 3, 1.6, 0.2))
+plot(density(faithful$eruptions, kernel="gaussian", bw=1), main="Gaussian Kernel", xlab="", ylim=c(0,1),lwd=2)
+points(density(faithful$eruptions, kernel="gaussian", bw=0.1), col=2, main="Gaussian Kernel", xlab="", type="l",lwd=2)
+points(density(faithful$eruptions, kernel="gaussian", bw=0.01), col=4, main="Gaussian Kernel", xlab="", type="l")
+rug(jitter(faithful$eruptions))
+legend("topleft", legend = c("h=1","h=0.1","h=0.01"),lty=1,col=c(1,2,4))
+```
+
+## Bias-variance Trade-off
+
+Goal: choose the tuning parameter $h$ so that the mean squared error of the estimator is minimized:
+$$\underbrace{\E \big[ \widehat{f}(x) - f(x) \big]^2}_{MSE} = \E \big[ \widehat{f}(x) \pm \E \widehat{f}(x) - f(x) \big]^2 = \underbrace{\big[\E \widehat{f}(x) - f(x) \big]^2}_{bias^2} + \underbrace{\mathrm{var}\big( \widehat{f}(x) \big)}_{variance}$$
+
+**Blackboard calculations** (available in the lecture notes) give
+$$
+\begin{split}
+\mathrm{bias}(\widehat{f}(x)) &= \frac{1}{2} h^2 f''(x) \int z^2 K(z) dz + o(h^2) \\
+\mathrm{var}\big( \widehat{f}(x) \big) &= \frac{1}{nh} f(x) \int \big[K(z)\big]^2 dz + o\left( \frac{1}{nh} \right)
+\end{split}
+$$
+
+This shows consistency for $h=h_n \to 0$ and $n h_n \to \infty$ and encapsulates the trade-off:
+
+* small $h$ $\Rightarrow$ small bias but large variance 
+* large $h$ $\Rightarrow$ large bias but small variance
+
+## Optimal Bandwidth
+
+Plugging this back in the MSE formula ignoring the *little-o* terms, deriving the MSE by $h$ and setting it to zero leads to asymptotically optimal bandwidth choice:
+$$h_{opt}(x) = n^{-1/5} \left(\frac{f(x) \int K(z)^2 dz}{\big[ f''(x) \big]^2 \big[\int z^2 K(z) dz \big]^2}\right)^{-1/5}$$
+
+1. $h_{opt}(x)$ is a local choice - depends on $x$
+2. global choice can be obtained by integrating out $x$
+3. $h_{opt}(x)$ cannot be directly used, since depends on the unknown $f$
+    - reference method: assume a known $f$ for this formula
+    - two-step method: $f$ in the formula estimated by a pilot fit (e.g. visually appealing one)
+4. $h_{opt}(x) \asymp n^{-1/5}$ and with this choice $$MSE \asymp bias^2 \asymp variance = \mathcal{O}(n^{-4/5})$$
+    - optimal non-parametric rate
+
+# Computational Considerations
+
+## Computational Considerations
+
+Evaluating
+$$ \widehat{f}(x_j) = \frac{1}{n h} \sum_{i=1}^n K\left( \frac{X_i - x_j}{h} \right)$$
+on a grid of points $x_1,\ldots, x_m$ takes naively $\mathcal{O}(mn)$.
+
+* for $n \asymp m$, this means quadratic complexity $\mathcal{O}(n^2)$
+* we will show how to reduce this to log-linear complexity $\mathcal{O}(n \log n)$
+
+## Circulants and DFT
+
+**Definition:** A matrix $\mathbf{C} = (c_{jk})_{j,k=0}^{p-1} \in \mathbb{R}^{p \times p}$ is called *circulant* if $c_{jk} = c_{|j-k|}$, where $\mathbf{c} = (c_j) \in \mathbb{R}^{p}$ is the *symbol* of $\mathbf{C}$ (the first column of $\mathbf{C}$).
+
+```{r, out.width='50%', fig.align='center'}
+knitr::include_graphics('../Plots/circulant_matrix.png')
+```
+
+**Definition:** The *discrete Fourier basis* in $\mathbf{R}^p$ is (in the columns of) the matrix $\mathbf{E} = (e_{jk})_{j,k=0}^{p-1} \in \mathbb{R}^{p \times p}$ with entries given by
+$$ e_{jk} = \frac{1}{\sqrt{p}} e^{2\pi i j k / p} , \qquad j,k=0,\ldots,p-1$$
+
+* straightforward to check that $\mathbf{E}$ is unitary $\Rightarrow$ really a basis.
+
+## Circulants and DFT
+
+**Definition:** The *discrete Fourier transform* (DFT) of $\mathbf{x} \in \mathbb{R}^p$ is $\mathbf{E}^* \mathbf{x}$ with $\mathbf{E}$ being the discrete Fourier basis from the previous definition. The inverse DFT is the same without the complex conjugate $\mathbf{E} \mathbf{x}$.
+
+**FFT**: Any algorithm allowing to perform DFT of $\mathbf x \in \mathbb{R}^p$ with the log-linear complexity $\mathcal{O}(p \log p)$ is referred to as the fast Fourier transform (FFT).
+
+* think of a function `fft(x)` that returns $\mathbf{E}^* \mathbf{x}$
+* the original algorithm due to John W. Tukey
+   
+## Circulants and DFT
+ 
+**Claim:** Circulant matrices are diagonalizable by the DFT. Specifically, the eigendecomposition of a circulant matrix $\mathbf{C}$ (with a symbol $\mathbf{c}$) is given by  $\mathbf{C} = \mathbf{E} \mathrm{diag}(\mathbf{q}) \mathbf{E}^*$, where $\mathbf{q} = \mathbf{E}^* \mathbf{c}$.
+
+**Proof:** In the lecture notes, if interested.
+
+Now we know that every circulant matrix can be applied efficiently thanks to the FFT:
+$$\mathbf{C} \mathbf{x} = \underbrace{\mathbf{E} \underbrace{\mathrm{diag}(\mathbf{\underbrace{\mathbf q}_{= \mathrm{FFT}(\mathbf{c})}}) \underbrace{\mathbf{E}^* \mathbf x}_{ = \mathrm{FFT}(\mathbf x)}}_{\text{entry-wise prod of those 2 vectors}}}_{\text{inverse FFT of that product}}$$
+
+## KDE after Initial Histogram
+
+$$ \widehat{f}(x) = \frac{1}{n h} \sum_{i=1}^n K\left( \frac{X_i - x_j}{h} \right)$$
+
+Round data $X_1,\ldots, X_n \in (a,b]$ to a common equidistant grid $a = t_0 < t_1< \ldots <t_{p-1} < t_P = b$
+
+* let $\widetilde{X}_1,\ldots,\widetilde{X}_n$ denote rounded data and $\mathbf{y} \in \mathbb{R}^p$ the counts, i.e. $y_j = \sum_{i=1}^n \mathbb{I}_{\big[X_i \in (t_{i-1},t_{i}]\big]}$
+* this is nothing but a histogram (only an initial one, with a small binwidth)
+
+KDE of the rounded data $\equiv$ linear smoother of the initial histogram:
+$$
+\widehat{f}(x) = \frac{1}{n h_n} \sum_{i=1}^n K\left(\frac{\widetilde{X}_i - x}{h_n} \right) = 
+\frac{1}{n h_n} \sum_{j=1}^p K\left(\frac{t_j - x}{h_n} \right) y_j
+$$
+
+## Effect of Rounding is Small
+
+By rounding, we only commit negligible (numerical) error:
+
+```{r,fig.dim=c(8,4)}
+par(mfrow=c(1,2), mar = c(3.2, 3, 1.6, 0.2))
+init_hist <- hist(faithful$eruptions, breaks = 256, plot=F)
+x_tilde <- rep(init_hist$mids, times=init_hist$counts) # read \tilde{X} from the initial histogram
+hist(faithful$eruptions, breaks = 256, freq=F, plot=T,xlab="",main="") # plot init hist on the density scale
+points(density(x_tilde,bw=0.25),col=4,type="l",lwd=3)
+# compare with the default KDE
+plot(density(x_tilde,bw=0.25),col=4,lwd=3,xlab="",main="")
+points(density(faithful$eruptions,bw=0.25),type="l",main="KDE",lwd=3,lty=2)
+legend("topleft",legend=c("original","rounded"),lty=c(2,1),col=c(1,4))
+```
+
+## KDE as a Linear Smoother
+
+$$
+\widehat{f}(x) = \frac{1}{n h_n} \sum_{j=1}^p K\left(\frac{t_j - x}{h_n} \right) y_j
+$$
+
+Say we want to evaluate $\widehat{f}$ on the grid $t_1,\ldots,t_p$. Then
+$$\big(\widehat{f}(t_1),\ldots,\widehat{f}(t_p)\big)^\top = \mathbf{S} y, \quad \text{with} \quad s_{ij} = \frac{1}{n h_n} K\left(\frac{t_j - t_i}{h_n} \right)$$
+
+* matrix transformation of the input (here $\mathbf y$) $\equiv$ linear smoother
+
+```{r, echo=F,out.width="40%",fig.show='hold', fig.align='center'}
+gkern_x <- density(0,bw=0.25)$x[seq(1,512,by=2)]
+gkern_y <- density(0,bw=0.25)$y[seq(1,512,by=2)] # the Gaussian kernel for smoothing the initial histogram
+hist(faithful$eruptions, breaks = 256, freq=F, plot=T,xlab="",main="")
+points(gkern_x+3,gkern_y, col="2",type="l",lwd=2)
+library(lattice)
+levelplot(toeplitz(c(gkern_y[129:256],rep(0,128))),xaxt="n")
+```
+
+## Toeplitz into Circulant
+
+The hat matrix $\mathbf S$ is a Toeplitz (stationary) matrix.
+
+Any Toeplitz matrix $\mathbf{S}$ of dimensions $n \times n$ can be embedded into a circulant matrix $\mathbf{C}$ of dimensions at most $(2n -1) \times (2n-1)$. The easiest way is to wrap the first row of $\mathbf{S}$, denoted $\mathbf{s}$, to form the first row of $\mathbf{C}$ as
+$$
+\mathbf{c} = (s_1, s_2, \ldots, s_{n-1}, s_n, s_{n-1},\ldots,s_2)^\top
+$$
+
+```{r,echo=F,out.width="50%",fig.align='center'}
+s_vec <- c(gkern_y[129:256],rep(0,128))
+c_vec <- c(s_vec,rev(s_vec[2:256]))
+levelplot(toeplitz(c_vec),xaxt="n")
+```
+
+## Toeplitz and FFT
+
+Calculating $\mathbf S \mathbf y$ with $\mathbf S$ Toeplitz can be done fast by
+
+* embedding $\mathbf S$ into a circulant $\mathbf{C}$
+* noticing that
+$$
+\mathbf{C} \begin{pmatrix}
+\mathbf{y} \\
+\mathbf 0
+\end{pmatrix}
+ = \left( \begin{array}{c|c}
+\mathbf{S} & \cdot \\
+\hline
+\cdot & \cdot
+\end{array}\right)
+\left( \begin{array}{c}
+\mathbf{y} \\
+\hline
+\mathbf 0
+\end{array}\right) = \left( \begin{array}{c}
+\mathbf S \mathbf{y} \\
+\hline
+\cdot
+\end{array}\right)
+$$
+* calculating $\mathbf C \mathbf y$ using FFT
+
+## Summary - Computations
+
+Fast KDE calculation:
+
+1. round up the original data to a common equidistant grid
+    - equivalent to calculating initial histogram (with a small binwidth)
+    - KDE is now reduced to a linear smoother with a Toeplitz hat matrix
+2. Embed the Toeplitz hat matrix into a circulant matrix
+3. Use FFT to apply the circulant matrix
+
+From a high-level point of view, disregarding FFT:
+
+* rounding data induces structure (Toeplitz)
+* this structure can be used to speed up computations
+
+## Summary - Overall
+
+Motivation:
+
+1. On Week 2, we introduced the histogram as a data exploratory tool.
+2. On Week 3, we noticed some issues of the histogram.
+3. Histogram is a poor estimator of density, because it
+    - is never smooth and requires a choice of *origin*
+4. Today, we introduced naive KDE by generalizing histogram to its *origin*-free version.
+5. Then, we generalized naive KDE by allowing for better kernels.
+6. Now we have a decent nonparametric density estimation tool: KDE.
+    - in exploratory analysis, histograms often overlaid with KDEs.
+
+**Main takeaways**:    
+
+7. Asymptotic properties analyzed using Taylor expansions.
+    - suggest a way to choose *bandwidth*
+    - the bias-variance trade-off made explicit
+8. Working on a grid and using FFT is the key to computational feasibility.
+
+## Degrees of Freedom (df)
+
+* in linear models, the model df is the dimension of the space where the model is free to vary
+  - equals number of regressors $p$ if no linear dependence between regressors
+  - generally $\mathrm{tr}(\mathbf H)$, i.e. the trace of the hat matrix $\mathbf{H} = \mathbf{X} (\mathbf{X}^\top \mathbf{X})^\dagger \mathbf{X}^\top$
+* more generally for linear smoothers: $\mathrm{df} := \mathrm{tr}(\mathbf{S})$
+
+Example: think of a Gaussian mixture model for the Old Faithful eruption data:
+$$f(x) = \tau \varphi_{\mu_1,\sigma_1^2}(x) + (1-\tau)\varphi_{\mu_2,\sigma_2^2}(x)$$
+```{r,out.width="40%",fig.align="center",fig.show='hold'}
+par(mar=c(3,3,3,3),ps=30)
+my_bw <- 0.07977
+my_df <- dnorm(0,0,1)/my_bw
+hist(faithful$eruptions, probability=T, main = "Eruption duration", xlab="time [min]")
+plot(density(faithful$eruptions,bw=my_bw),main=paste("bw =",my_bw," & ","df =",round(my_df,5)),xlab="")
+```
+
+## Assignment [5%]
+
+Slide "Bandwidth > Kernel" above gives a vague statement, that choosing bandwidth $h$ is more important than choosing a proper kernel. See this for yourself using a small simulation study. Specifically:
+
+* use Manual 09 to generate data from the Gaussian mixture $f$
+* repeat the following 200 times:
+  - generate $N=100$ samples from the Gaussian mixture
+  - perform density estimation, i.e. obtain $\widehat{f}$, for
+    - Gaussian, Epanechnikov, and rectangular kernels
+    - bandwidth values $h = 0.1,0.15,0.2,0.25,\ldots,0.9$
+  - calculate the error measure $\| f - \widehat{f} \|_2$
+* report your findings as a single (well commented) figure
+
+**Note**: Please check again Section 5 of the Course Organization for submission instructions.

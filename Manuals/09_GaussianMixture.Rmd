@@ -1,0 +1,43 @@
+---
+title: "How to use Markdown from RStudio"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+The two functions below allow for random number generation and density evaluation for the Gaussian mixture distribution
+$$f(x) = (1-\tau) \varphi_{\mu_1,\sigma_1^2}(x) + \tau\varphi_{\mu_2,\sigma_2^2}(x).$$
+
+```{r}
+rmixnorm <- function(N, mu1, mu2, sigma1, sigma2, tau){
+  ind <- I(runif(N) > tau)
+  X <- rep(0,N)
+  X[ind] <- rnorm(sum(ind), mu1, sigma1)
+  X[!ind] <- rnorm(sum(!ind), mu2, sigma2)
+  return(X)
+}
+
+dmixnorm <- function(x, mu1, mu2, sigma1, sigma2, tau){
+  y <- (1-tau)*dnorm(x,mu1,sigma1) + tau*dnorm(x,mu2,sigma2)
+  return(y)
+}
+```
+
+A sample call is below.
+
+```{r}
+mu1 <- 3
+mu2 <- 0
+sigma1 <- 0.5
+sigma2 <- 1
+tau <- 0.6
+
+X <- rmixnorm(N, mu1, mu2, sigma1, sigma2, tau)
+x <- seq(-3,6,by=0.01)
+fx <- dmixnorm(x, mu1, mu2, sigma1, sigma2, tau)
+hist(X,freq=F)
+points(x,fx,type="l")
+```
+

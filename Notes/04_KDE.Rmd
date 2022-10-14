@@ -22,7 +22,7 @@ hist(faithful$eruptions, probability=T, main = "Eruption duration", xlab="time [
 hist(faithful$waiting, probability=T, main = "Waiting time", xlab="time [min]")
 ```
 
-We assume that there exist underlying densities from which the eruption durations and waiting times are drawn. While histograms are useful in providing some quick information (supports, bimodality, etc.) they are quite useless in capturing finer properties, such as the shape, since they heavily depend on the *binwidth* as well as the *origin* -- the two quantities that determine equally-spaced breaks for the bins.
+We assume that there exist underlying densities from which the eruption duration and waiting times are drawn. While histograms are useful in providing some quick information (supports, bimodality, etc.) they are quite useless in capturing finer properties, such as the shape, since they heavily depend on the *binwidth* as well as the *origin* -- the two quantities that determine equally-spaced breaks for the bins.
 
 ```{r, fig.dim = c(10,2)}
 par(mfrow=c(1,4), mar = c(3.2, 3, 1.6, 0.2)) # reduce the white space around individual plots
@@ -46,7 +46,7 @@ While binwidth is a reasonable tuning parameter (it's role is quite intuitive an
 
 Recall that the density $f$ is the derivative of the distribution function $F$, and hence 
 $$ f(x) = \lim_{h \to 0_+} \frac{F(x+h) - F(x-h)}{2h} $$
-The most natural estimator for $F$ is the empirical distribution function $\widehat{F}_n$, i.e. $\widehat{F}_n(x) = \frac{1}{n} \sum_{i=1}^n \mathbb{I}_{[X_i \leq x]}$. If we fix the *bandwidth* $h = h_n$ (at something "small" and depending on $n$, we need $h_n \to 0_+$ for $n \to 0$ in order to have any hope in consistency) and plug in the EDF to the previous equation, we obtain a density estimator
+The most natural estimator for $F$ is the empirical distribution function $\widehat{F}_n$, i.e. $\widehat{F}_n(x) = \frac{1}{n} \sum_{i=1}^n \mathbb{I}_{[X_i \leq x]}$. If we fix the *bandwidth* $h = h_n$ (at something "small" and depending on $n$, we need $h_n \to 0_+$ for $n \to 0$ in order to have any hope for consistency) and plug in the EDF to the previous equation, we obtain a density estimator
 $$ \widehat{f}(x) = \frac{\widehat{F}_n(x+h_n) - \widehat{F}_n(x-h_n)}{2h_n} $$
 
 So let's take a look at consistency:
@@ -64,16 +64,15 @@ There are two other observations to be made about the naive estimator above:
 
 1. While the naive estimator $\widehat{f}(x)$ is well defined for any $x$, computing it in practice requires specifying a (usually equidistant) grid of points $x_1, \ldots, x_k$ for which the estimator should be evaluated.  
 For plotting purposes, these are interpolated by a piece-wise linear function. Notice that if we choose the grid's resolution to match the bandwidth and interpolate by a piece-wise constant function instead, we end up exactly with a histogram.  
-Also, even when we calculate the naive estimator $\widehat{f}(x)$ on a dense grid of points (compared to a histogram) we will have exactly the histogram's value in the middle of every histogram bin. Hence the naive estimator $\widehat{f}(x)$ can be essentially though of as a "moving histogram".
+Also, even when we calculate the naive estimator $\widehat{f}(x)$ on a dense grid of points (compared to a histogram) we will have exactly the histogram's value in the middle of every histogram bin. Hence the naive estimator $\widehat{f}(x)$ can be essentially though of as a "moving histogram"(so *origin* does not matter anymore).
 
 ```{r, echo=F, fig.dim = c(8,4)}
-# what is wrong with the function below?
 kde_hist <- function(bw){
-# bw = bandwidth for KDE = 2-times binwidth for histogram
+# `bw` = bandwidth for KDE = 2-times binwidth for histogram = `binw`
   binw <- 2*bw
   br <- seq(1.5,5.5,by=binw)
   temp <- density(faithful$eruptions, kernel="rectangular", bw=bw/sqrt(3))
-  plot(temp,lwd=2,col=4, main="bandwidth = 0.5, binwidth = 1", xlab="")
+  plot(temp,lwd=2,col=4, main=paste0("bandwidth = ",bw,", binwidth = ", binw), xlab="")
   hist(faithful$eruptions, freq=FALSE, breaks=br, add=T, main="")
   rug(jitter(faithful$eruptions))
 }
@@ -93,17 +92,17 @@ In the previous section, we developed an estimator of the density $f$ by conside
 
 The uniform density in the estimator
 $\widehat{f}(x) = \frac{1}{n h_n} \sum_{i=1}^n K\left(\frac{X_i - x}{h_n} \right)$
-can be replaced for some kernel $K(\cdot)$. As long as the kernel satisfies the following assumptions:
+can be replaced by some kernel $K(\cdot)$. As long as the kernel satisfies the following assumptions:
 
 1. $K(x) \geq 0$ for all $x \in \mathbb{R}$
-2. $K(- x) = X(x)$ for all $x \in \mathbb{R}$
+2. $K(- x) = K(x)$ for all $x \in \mathbb{R}$
 3. $\int_\mathbb{R} K(x) d x = 1$
 4. $\lim_{|x| \to \infty} |x| K(x) = 0$
 5. $\sup_x |K(x)| < \infty$
 
 and $h_n \to 0$ and $n h_n \to \infty$, we can show consistency and asymptotic normality for any fixed $x$ (in which $f$ is continuous, and moreover non-zero for asymptotic normality), though not as easily as done above for the uniform density kernel.
 
-Note: Showing uniform consistency ($\sup_{x}|\widehat{f}(x) - f(x)| \to 0$) is also possible, but much harder.
+*Note*: Consistency is shown below in Section 3. Showing uniform consistency (i.e. that $\sup_{x}|\widehat{f}(x) - f(x)| \to 0$) is also possible, but much harder.
 
 Assumptions 1-3 above hold for any density of a symmetric distribution. Assumption 4 holds if the support is compact or if the corresponding random variable has a finite absolute moment. Assumption 5 is uniform boundedness of the Kernel. These assumptions are satisfied by many densities. The most commonly used ones are:
 
@@ -155,10 +154,31 @@ rug(jitter(faithful$eruptions))
 legend("topleft", legend = c("h=1","h=0.1","h=0.01"),lty=1,col=c(1,2,4))
 ```
 
-This is actually the bias-variance decomposition in practice. We look for a sweet spot, which minimizes the mean squared error
-$$ MSE = bias^2 + variance$$
+This is actually the bias-variance decomposition in practice. We look for a sweet spot, which minimizes the mean squared error (MSE) of $\widehat{f}$ at $x$:
+$$\underbrace{\E \big[ \widehat{f}(x) - f(x) \big]^2}_{MSE} = \E \big[ \widehat{f}(x) \pm \E \widehat{f}(x) - f(x) \big]^2 = \underbrace{\big[\E \widehat{f}(x) - f(x) \big]^2}_{bias^2} + \underbrace{\mathrm{var}\big( \widehat{f}(x) \big)}_{variance}$$
+Let us calculate the bias and the variance (note they are both pointwise, i.e. depending on $x$, just as the MSE is). For the bias:
+$$
+\E \widehat{f}(x) = \E \frac{1}{n h} \sum_{i=1}^n K\left(\frac{X_i - x}{h} \right) = \frac{1}{h} \int K\left(\frac{y - x}{h} \right) f(y) d y
+$$
+and substituting $z=(y-x)/h$, we have
+$$bias = \frac{1}{h} \int K\left(\frac{y - x}{h} \right) f(y) d y - f(x) = \int K(z) \big[ f(x+hz) - f(x) \big] dz$$
+We already know that we have hopes for consistency only with $h=h_n \to 0$ and $n h_n \to \infty$, so let us invoke Taylor expansion of $f(x+hz)$ at $x$:
+$$f(x+hz) = f(x) + h z f'(x) + \frac{1}{2}h^2z^2f''(x) + \ldots$$
+leading for $h \to 0$ to
+$$ bias = h f'(x) \underbrace{\int z K(z) dz}_{=0} + \frac{1}{2} h^2 f''(x) \int z^2 K(z) dz + \mathcal{o}(h^2) $$
 
-It is straightforward to show that $bias=$ and $variance=$, leading to the asymptotically optimal choice of bandwidth (ignore the o-terms, derive the MSE by $h$ and set it to zero): (TODO as in the ETH notes, calculations on the blackboard?)
+For the variance: denoting $\star = K\left(\frac{y - x}{h} \right)$
+$$\mathrm{var}\big( \widehat{f}(x) \big) = \frac{1}{nh^2} \mathrm{var}\left(\star\right) = \frac{1}{nh^2} \E \star^2 - \frac{1}{nh^2} \big(\E \star \big)^2 = \frac{1}{nh^2} \int \left( K\left(\frac{y - x}{h} \right) \right)^2 f(y) dy - \frac{1}{nh^2} \left(\int K\left(\frac{y - x}{h} \right)  f(y) dy \right)^2 $$
+and hence for $h=h_n \to 0$ and $n h_n \to \infty$ we have (using the same substitution and Taylor as above)
+$$
+\begin{split}
+\mathrm{var}\big( \widehat{f}(x) \big) &= \frac{1}{nh} \underbrace{\frac{1}{h} \int \left( K\left(\frac{y - x}{h} \right) \right)^2 f(y) dy}_{\int f(x+hz) [K(z)]^2 dz} - \underbrace{\frac{1}{n}\big[ f(x) + bias(x) \big]^2}_{\mathcal{O}(n^{-1}) = \mathcal{o}(n^{-1} h^{-1})} \\
+&= \frac{1}{nh} f(x) \int \big[K(z)\big]^2 dz + \mathcal{o}\left( \frac{1}{nh} \right)
+\end{split}
+$$
+
+The calculations above lead to the asymptotically optimal choice of bandwidth (ignore the o-terms, derive the MSE by $h$ and set it to zero):
+$$h_{opt}(x) = n^{-1/5} \left(\frac{f(x) \int K(z)^2 dz}{\big[ f''(x) \big]^2 \big[\int z^2 K(z) dz \big]^2}\right)^{-1/5}$$
 
 About this formula, notice that:
 
@@ -167,7 +187,7 @@ About this formula, notice that:
   - reference method: we "assume" that $f$ is Gaussian (only for the purposes of bandwidth selection), estimate the mean and the variance, plug it in into the $h_{opt}$ formula
   - 2-step method: firstly fit the KDE with some (e.g. a visually appealing and global) choice of $h$, and then use the fit in he formula for $h_{opt}$
 * The local choices above can be turned into global choices by integration.
-* It reveals the $h_n \propto n^{-1/5}$ is the asymptotically optimal rate for the bandwidth. Plugging the optimal bandwidth back to the formulas for bias and variance, both bias and variance will be of order $\mathcal{O}(n^{-4/5})$, which is indeed the optimal rate of convergence. Notice that this rate is slower than the usual $1/n$ we achieve with parametric methods (in the correct models!), which is the price we pay for the flexibility offered by the non-parametric approach.
+* It reveals the $h_n \propto n^{-1/5}$ is the asymptotically optimal rate for the bandwidth. Plugging the optimal bandwidth back to the formulas for bias and variance, both the squared bias and the variance will be of order $\mathcal{O}(n^{-4/5})$, which is indeed the optimal rate of convergence. Notice that this rate is slower than the usual $1/n$ we achieve with parametric methods (in the correct models!), which is the price we pay for the flexibility offered by the non-parametric approach.
 
 In practice, cross-validation (CV) is the method of choice for bandwidth selection. CV will be the topic of one of the future lectures, and we will return to bandwidth selection for KDE then.
 
@@ -199,14 +219,14 @@ points(1:length(n),n^{-4/(4+1)},type="b",col=6)
 legend("topright",legend=c("d=5","d=4","d=3","d=2","d=1"), lty=1,col=c(5:2,6))
 ```
 
-Notice the gray horizontal line showing that, in terms of this asymptotic rate, $n\approx 300$ with $d=1$ leads to approximately the same error as as $n=30000$ with $d=5$. This is a manifestation of the infamous *curse of dimensionality*. For this reason, KDE is usually restricted to dimensions $d=1$ or $d=2$ (beyond these, one usually assumes independence between the dimensions, estimates marginals separately using the ideas here, and then stitch the dimensions together using e.g. *copulas*).
+Notice the gray horizontal line showing that, in terms of this asymptotic rate, $n\approx 300$ with $d=1$ leads to approximately the same error as $n=30000$ with $d=5$. This is a manifestation of the infamous *curse of dimensionality*. For this reason, KDE is usually restricted to dimensions $d=1$ or $d=2$ (beyond these, one usually assumes independence between the dimensions, estimates marginals separately using the ideas here, and then stitch the dimensions together using e.g. *copulas*).
 
 
 # 5. Computational Considerations
 
 Say we have $n$ observations ($X_1,\ldots,X_n)$ and $m$ points on which we want to evaluate the estimator ($x_1,\ldots,x_m$). For a fixed bandwidth $h$, calculating the estimator
 $$ \widehat{f}(x_j) = \frac{1}{n h} \sum_{i=1}^n K\left( \frac{X_i - x_j}{h} \right)$$
-for every $j=1,\ldots,m$, i.e. for all the evaluation points, takes $\mathcal{O}(mn)$ operations. Say that $m$ and $n$ are comparable, then the complexity is quadratic: $\mathcal{O}(n^2)$. While this may not seem bad (for comparison, solving a system of $n$ equations $\mathbf{A} \mathbf{x} = \mathbf{b}$ without any special structure on the left-hand matrix $\mathbf{A}$ takes $\mathcal{O}(n^3)$ operations), it may get bad pretty fast in higher dimensions (everything naturally translates there). Here we discuss how to reduce the quadratic complexity to log-linear one, i.e. how to calculate the estimator in $\mathcal{O}(n \log n)$. operations.
+for every $j=1,\ldots,m$, i.e. for all the evaluation points, takes $\mathcal{O}(mn)$ operations. Say that $m$ and $n$ are comparable, then the complexity is quadratic: $\mathcal{O}(n^2)$. While this may not seem bad (for comparison, solving a system of $n$ equations $\mathbf{A} \mathbf{x} = \mathbf{b}$ without any special structure on the left-hand matrix $\mathbf{A}$ takes $\mathcal{O}(n^3)$ operations), it may get bad pretty fast in higher dimensions (everything naturally translates there). Here we discuss how to reduce the quadratic complexity to log-linear one, i.e. how to calculate the estimator in $\mathcal{O}(n \log n)$ operations.
 
 ## 5.1 Circulant Matrices and Discrete Fourier Transform
 
@@ -281,7 +301,7 @@ $$
 <div style="text-align: right">**Q.E.D.**</div>
 
 Now we know that every circulant matrix can be applied efficiently thanks to the FFT:
-$$\mathbf{C} \mathbf{x} = \underbrace{\mathbf{E} \underbrace{\mathrm{diag}(\mathbf{\underbrace{q}_{= \mathrm{FFT}(\mathbf{c})}}) \underbrace{\mathbf{E}^* x}_{ = \mathrm{FFT}(x)}}_{\text{entry-wise prod of those 2 vectors}}}_{\text{IFFT of that product}}$$
+$$\mathbf{C} \mathbf{x} = \underbrace{\mathbf{E} \underbrace{\mathrm{diag}(\mathbf{\underbrace{\mathbf q}_{= \mathrm{FFT}(\mathbf{c})}}) \underbrace{\mathbf{E}^* \mathbf x}_{ = \mathrm{FFT}(\mathbf x)}}_{\text{entry-wise prod of those 2 vectors}}}_{\text{inverse FFT of that product}}$$
 Hence instead of the $\mathcal{O}(p^2)$ operations needed to calculate $\mathbf{C} \mathbf{x}$ naively, we can calculate it using FFT (twice FFT and once inverse FFT) in just $\mathcal{O}(p \log(p))$ operations.
 
 ## 5.2 KDE viewed as a Linear Smoother
@@ -331,7 +351,7 @@ library(lattice)
 levelplot(toeplitz(c(gkern_y[129:256],rep(0,128))),xaxt="n")
 ```
 
-The kernel on the left-hand plot above just shift (from left to right, visualized in the middle) and its values form the hat matrix on the right-hand side (from bottom to top).
+The kernel on the left-hand plot above just shifts (from left to right, visualized in the middle) and its values form the hat matrix on the right-hand side (from bottom to top).
 
 Any Toeplitz matrix $\mathbf{S}$ of dimensions $n \times n$ can be embedded into a circulant matrix $\mathbf{C}$ of dimensions at most $(2n -1) \times (2n-1)$. The easiest way is to wrap the first row of $\mathbf{S}$, denoted $\mathbf{s}$, to form the first row of $\mathbf{C}$ as
 $$
@@ -375,11 +395,11 @@ Since this section is a bit longer and we might have lost the thread, let's summ
 
 While I have been using solely the function `density()` from the base R distributions, there are in fact dozens of packages in R performing univariate kernel density estimation. An overview is given in [Wickham (2011)](http://vita.had.co.nz/papers/density-estimation.html), including a simulation study concerning the speed and accuracy of some of the available packages. Interestingly, some packages are quite bad, one of the is not even consistent (in the sense that the error does not converge to zero)! The takeaway message is clear: one should be aware of what software he uses. To this point, the `density()` function uses an FFT algorithm as described above and, while still not being the fastest, it is a well documented and reliable option.
 
-Secondly, now that we understand that KDE (which is really the standard for density estimation) is basically just a histogram smoother, it is clear why "densigrams" (histograms overlaid with KDEs) are so popular for visualization purposes. TODO: example.
+Secondly, now that we understand that KDE (which is really the standard for density estimation) is basically just a histogram smoother, it is clear why "densigrams" (histograms overlaid with KDEs) are so popular for visualization purposes (like the first plot in Section 5.2 above).
 
 # 6. Degrees of Freedom
 
-I would like to conclude with another reason, why understanding KDEs as linear smoothers is useful, again through the connection with linear regression. In linear models, the (regression, as opposed to residual) *degrees of freedom* is the dimensionality in which the model (for the mean) is free to vary. If there is no linear dependence between the predictors, then this is simply the number of predictors $p$. If, on the other hand, there is linear dependence, we can still define the degrees of freedom as $\mathrm{df} := \mathrm{tr}(\mathbf{H})$, where $\mathrm{tr}(\cdot)$ denotes the trace of the matrix (the sum of the diagonal elements), $\mathbf{H} = \mathbf{X} (\mathbf{X}\top \mathbf{X})^\dagger \mathbf{X}^\top$ is the hat matrix (and the $\dagger$ superscript denotes the pseudo-inverse). The degrees of freedom defined via the hat matrix still correspond to the model dimension. In KDE (or other non-parametric approaches), the model dimension in infinite. But for all linear smoothers (including KDE) it still makes sense to consider the trace of the hat-matrix as the degrees of freedom in our model:
+I would like to conclude with another reason, why understanding KDEs as linear smoothers is useful, again through the connection with linear regression. In linear models, the (regression, as opposed to residual) *degrees of freedom* is the dimensionality in which the model (for the mean) is free to vary. If there is no linear dependence between the predictors, then this is simply the number of predictors $p$. If, on the other hand, there is linear dependence, we can still define the degrees of freedom as $\mathrm{df} := \mathrm{tr}(\mathbf{H})$, where $\mathrm{tr}(\cdot)$ denotes the trace of the matrix (the sum of the diagonal elements), $\mathbf{H} = \mathbf{X} (\mathbf{X}^\top \mathbf{X})^\dagger \mathbf{X}^\top$ is the hat matrix (and the $\dagger$ superscript denotes the pseudo-inverse). The degrees of freedom defined via the hat matrix still correspond to the model dimension. In KDE (or other non-parametric approaches), the model dimension in infinite. But for all linear smoothers (including KDE) it still makes sense to consider the trace of the hat-matrix as the degrees of freedom in our model:
 $$ \mathrm{df} := \mathrm{tr}(\mathbf{S}) $$
 We can still vaguely think of this $\mathrm{df}$ as the model dimensionality.
 
@@ -398,3 +418,23 @@ plot(density(faithful$eruptions,bw=my_bw),main=paste("bw =",my_bw," & ","df =",r
 # References
 
 [H. Wickham's "KDE in R" paper](http://vita.had.co.nz/papers/density-estimation.html)
+
+# Assignment
+
+`ggplot2`'s `geom_smooth()` can use any smoother provided to it as a function, but by default it uses `loess()` (from the base R distribution) or `mgcv`'s `gam()` (using spline smoothing, which we will not cover in this course)
+
+program your own version of local linear regression smoother using the tricube kernel ($\propto 1 - |x|^3$) and compare it's behavior to `loess()` (which should be exactly the local linear regression with a tricube kernel, but who knows. Apparently `loess` returns a spline smoother of what would be computed using LOESS of Cleveland, which is equivalent to NW estimator)
+
+* Simulation study: On the slide "Bandwidth > Kernel" a claim is made, but only a visual evidence is given. Check out for yourself whether the claim is true.
+  - Compare different kernels for KDE, draw data from a Gaussian mixture and try KDE for Epanechnikov, Gaussian, Tricube and Rectangular kernels. Which one leads to the smallest MISE?
+  - Display your results for sample sizes $n=50,100,200,500$. The bandwidth $h$ is a nuissance parameter here: calculate everything on a grid of values for $h$ and always choose the minimum attained error.
+
+Simulation study: how much better is a 2-step local bw selection compared to a reference method?
+
+Simulation study: probe the $n^{-4/5}$ rate for kernel density estimators
+
+Programm a KDE smoother using FFT yourself.
+
+KDE and Kernel Regression are interesting for projects in general. We only touch the surface, there is much more to be explored, and potential non-trivial simulation studies are everywhere, it also really fits the spirit of this course. The way to make such a project a top-project would be to make a survey like the Wickham's one about local linear estimators.
+
+Omelka E12 ma peknou simulacni studii porovnavajici ruzne bandwidth selection strategies.
