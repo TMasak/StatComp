@@ -382,24 +382,24 @@ the Order of Choice?</a></li>
 <li><a href="#smoothing-splines" id="toc-smoothing-splines">5. Smoothing
 Splines</a></li>
 <li><a href="#references" id="toc-references">References</a></li>
+<li><a href="#assignment" id="toc-assignment">Assignment</a></li>
 </ul>
 </div>
 
-<p>TODO: Very often it is assumed that <span class="math inline">\(Y =
-m(X) + \epsilon\)</span>, but this introduces a structural assumption
-which is needed nowhere in what we are presenting?</p>
 <p>Suppose we observe i.i.d. copies of a bivariate random vector <span class="math inline">\((X,Y)^\top\)</span>, that is a random sample <span class="math inline">\((X_1,Y_1)^\top, \ldots, (X_n, Y_n)^\top\)</span>,
 and we are interested in modeling the conditional expectation of the
 response variable <span class="math inline">\(Y\)</span> given the
 single predictor variable <span class="math inline">\(X\)</span>, i.e.
 <span class="math display">\[ m(x) := \mathbb{E}\big[ Y \big| X = x
 \big] \]</span> In linear regression, we assume a parametric model <span class="math inline">\(m(x) = \beta_0 + \beta_1 x\)</span>. Here, we
-would like to make no such structural assumption. How to estimate <span class="math inline">\(m(x)\)</span> from the observed data
-non-parametrically?</p>
+would like to make no such structural assumption, instead only assuming
+that <span class="math inline">\(m\)</span> is sufficiently smooth. How
+to estimate <span class="math inline">\(m = m(x)\)</span> from the
+observed data non-parametrically?</p>
 <div id="local-constant-regression" class="section level1">
 <h1>1. Local Constant Regression</h1>
 <p>The simplest idea would be to use what we learned in the previous
-chapter, i.e. kernel density estimation. Denoting <span class="math inline">\(f_X(x)\)</span> the marginal density of <span class="math inline">\(X\)</span>, <span class="math inline">\(f(X,Y)(x,y)\)</span> the joint density of <span class="math inline">\(X\)</span> and <span class="math inline">\(Y\)</span> and <span class="math inline">\(f_{Y|X}(y|x)\)</span> the marginal density of
+chapter, i.e. kernel density estimation. Denoting <span class="math inline">\(f_X(x)\)</span> the marginal density of <span class="math inline">\(X\)</span>, <span class="math inline">\(f_{X,Y}(x,y)\)</span> the joint density of <span class="math inline">\(X\)</span> and <span class="math inline">\(Y\)</span> and <span class="math inline">\(f_{Y|X}(y|x)\)</span> the marginal density of
 <span class="math inline">\(Y\)</span> given <span class="math inline">\(X\)</span>, we can express the conditional
 expectation above as <span class="math display">\[ m(x) =
 \mathbb{E}\big[ Y \big| X = x \big] = \int_\mathbb{R} y f_{Y|X}(y|x) dy
@@ -408,11 +408,12 @@ the KDEs of <span class="math inline">\(f_{X|Y}(x,y)\)</span> and <span class="m
 the separable kernel <span class="math inline">\(K(\cdot)K(\cdot)\)</span> for the bivariate
 density), i.e. <span class="math display">\[ \widehat{f}_X(x) =
 \frac{1}{nh} \sum_{i=1}^n K\left( \frac{X_i-x}{h} \right) \qquad \&amp;
-\qquad \widehat{f}_{X,Y}(x,y) = \frac{1}{n h^2} K\left( \frac{X_i-x}{h}
-\right) K\left( \frac{Y_i-y}{h} \right), \]</span> into the previous
-formula, we obtain an estimator of the conditional expectation: <span class="math display">\[ \mathbf{m}(x) = \frac{\sum_{i=1}^n K\left(
-\frac{X_i-x}{h} \right) Y_i}{ \sum_{i=1}^n K\left( \frac{X_i-x}{h}
-\right)} \]</span> where we used that <span class="math inline">\(\frac{1}{h} \int_\mathbb{R} y K\left(
+\qquad \widehat{f}_{X,Y}(x,y) = \frac{1}{n h^2} \sum_{i=1}^n K\left(
+\frac{X_i-x}{h} \right) K\left( \frac{Y_i-y}{h} \right), \]</span> into
+the previous formula, we obtain an estimator of the conditional
+expectation: <span class="math display">\[ \widehat{m}(x) =
+\frac{\sum_{i=1}^n K\left( \frac{X_i-x}{h} \right) Y_i}{ \sum_{i=1}^n
+K\left( \frac{X_i-x}{h} \right)} \]</span> where we used that <span class="math inline">\(\frac{1}{h} \int_\mathbb{R} y K\left(
 \frac{Y_i-x}{h} \right) dy = \int_\mathbb{R} (Y + th) K(t) dt =
 Y\)</span>, where we used the symmetry of the kernel (twice).</p>
 <p>Note that the previous estimator is just a weighted average, and a
@@ -426,17 +427,140 @@ constant regression</em>.</p>
 </div>
 <div id="local-polynomial-regression" class="section level1">
 <h1>2. Local Polynomial Regression</h1>
+<p>Assuming now that <span class="math inline">\(m\)</span> is <span class="math inline">\(p\)</span>-times differentiable on the
+neighborhood of <span class="math inline">\(x\)</span>, we can invoke
+the following Taylor approximation: <span class="math display">\[m(X_i)
+\approx m(x) + (X_i-x) m&#39;(x) + \frac{(X_i-x)^2}{2!} m&#39;&#39;(x) +
+\ldots + \frac{(X_i-x)^p}{p!} m^{p}(x).\]</span></p>
+<p>In words, <span class="math inline">\(m\)</span> can be locally
+viewed as a polynomial of <span class="math inline">\(p\)</span>-th
+order, and we can write <span class="math display">\[Y_i = m(X_i) +
+\epsilon_i,\]</span> where <span class="math inline">\(\epsilon_i = Y_i
+- m(X_i)\)</span> is the error. For our imagination, we can think of
+<span class="math inline">\(\epsilon\)</span>’s being i.i.d. Gaussians,
+which is often assumed, but less often really needed (e.g. it is not
+needed for the bias-variance calculations we perform below).</p>
+<p>For a fixed <span class="math inline">\(x\)</span>, consider the
+following least squares problem: <span class="math display">\[\widehat{\beta}(x) =
+(\widehat{\beta}_0(x),\ldots, \widehat{\beta}_p(x)) =
+\mathrm{arg\,min}_{\mathbf b \in \mathbb{R}^{p+1}} \sum_{i=1}^n [Y_i -
+\beta_0 - \beta1(X_i-x) - \ldots - \beta_p(X_i-x)^p]^2
+K\left(\frac{X_i-x}{h}\right),\]</span> which is again a weighted least
+squares problem with</p>
+<ul>
+<li>weights governed by the kernel function <span class="math inline">\(K(\cdot)\)</span>,</li>
+<li>a solution (for a fixed <span class="math inline">\(x\)</span>)
+given by <code>lm()</code>.</li>
+</ul>
+<p>Notice from the Taylor expansion above that <span class="math inline">\(\widehat{\beta}_j(x)\)</span> estimates <span class="math inline">\(\frac{m^{(j)}(x)}{j!}\)</span>, so if we are
+interested only in <span class="math inline">\(m(x)\)</span>, we only
+retain <span class="math inline">\(\widehat{\beta}_0(x)\)</span>.
+However, this estimator will generally be different than the one from
+the local constant regression above. At the same time, we immediately
+obtain also estimates for the derivatives of <span class="math inline">\(m\)</span> (depending on the order <span class="math inline">\(p\)</span> we choose).</p>
 </div>
 <div id="local-linear-regression" class="section level1">
 <h1>3. Local Linear Regression</h1>
+<p>Choosing the order <span class="math inline">\(p=1\)</span> leads to
+the local linear estimator <span class="math display">\[(\widehat{\beta}_0(x), \widehat{\beta}_1(x)) =
+\mathrm{arg\,min}_{\mathbf b \in \mathbb{R}^{2}} \sum_{i=1}^n [Y_i -
+\beta_0 - \beta_1(X_i-x)]^2 K\left(\frac{X_i-x}{h}\right),\]</span>
+which provides an estimate for the regression function <span class="math inline">\(\widehat{m}(x) = \widehat{\beta}_0(x)\)</span>
+(and also for its derivative <span class="math inline">\(\widehat{m}&#39;(x) =
+\widehat{\beta}_1(x)\)</span>).</p>
+<p>It can be shown (quite easily, but quite tediously) that <span class="math inline">\(\widehat{\beta}_0(x) = \sum_{i=1}^n w_{ni}(x)
+Y_i\)</span>, where <span class="math display">\[w_{ni}(x) =
+\frac{\frac{1}{nh}K\left(\frac{X_i-x}{h}\right)\Big[ S_{n,2}(x) -
+\left(X_i-x\right) S_{n,1}(x) \Big]}{S_{n,0}(x) S_{n,2}(x) -
+S_{n,1}^2(x)}
+\quad \mathrm{with} \quad
+S_{n,k}(x) = \frac{1}{nh}\sum_{i=1}^n \left(\frac{X_i-x}{h}\right)^k
+K\left(\frac{X_i-x}{h}\right)
+\]</span> so <span class="math inline">\(\sum_{i=1}^n w_{ni}(x) =
+1\)</span> (but not necessarily <span class="math inline">\(w_{ni}(x)
+\geq 0\)</span>).</p>
+<p>Now, similarly (but much more tediously) to KDE, asymptotic
+expressions (containing little-o and big-O terms) can be found for <span class="math inline">\(S_{n,k}(x)\)</span> (under certain assumptions),
+and those can be collected into the following bias and variance
+formulas: <span class="math display">\[
+\begin{split}
+\mathrm{bias}(\widehat{m}(x)) &amp;= \frac{1}{2} m&#39;&#39;(x) h_n^2
+\int z^2 K(z) dz + \mathcal{o}_P(h^2_n)\\
+\mathrm{var}(\widehat{m}(x)) &amp;= \frac{\sigma^2(x) \int [K(z)]^2
+dz}{f_X(x) n h_n} + \mathcal{o}_P\left( \frac{1}{n h_n} \right)
+\end{split}
+\]</span> where <span class="math inline">\(\sigma^2(x) =
+\mathrm{var}(Y_1|X_1=x)\)</span> is the local variance.</p>
+<p>These formulas are pertinent only to the local linear estimator. For
+other orders <span class="math inline">\(p\)</span> they look
+differently (but are obtained by the same means). The bias and variance
+formulas here share many similarities to those developed for KDEs last
+week. In particular, we still need <span class="math inline">\(h = h_n
+\to 0\)</span> in order for bias to disappear asymptotically and <span class="math inline">\(n h_n \to \infty\)</span> in order for the
+variance to disappear asymptotically. But we also need <span class="math inline">\(n h_n^3 \to \infty\)</span> here for the
+calculations above (one of the “certain assumptions”), so basically we
+need to be even more careful when choosing the bandwidth <span class="math inline">\(h\)</span> for local regression compared to
+KDE.</p>
 <div id="bandwidth-selection" class="section level2">
 <h2>3.1 Bandwidth Selection</h2>
-<p>bias and variance</p>
+<p>Similarly to what we did last week with KDEs, we consider <span class="math display">\[MSE(\widehat{m}(x)) =
+\mathrm{var}(\widehat{m}(x)) +
+\big[\mathrm{bias}(\widehat{m}(x))\big]^2\]</span> and, dropping the
+little-o terms, we obtain <span class="math display">\[AMSE(\widehat{m}(x)) = \frac{\sigma^2(x) \int
+[K(z)]^2 dz}{f_X(x) n h_n} + \frac{1}{4} \big[m&#39;&#39;(x)\big]^2
+h_n^4 \left(\int z^2 K(z) dz\right)^2.\]</span></p>
+<p>Now, a local bandwidth choice can be obtained by optimizing AMSE.
+Taking derivatives and setting them to zero, we obtain <span class="math display">\[h_{opt}(x) = n^{-1/5} \left[ \frac{\sigma^2(x)
+\int [K(z)]^2 dz}{\big[m&#39;&#39;(x) \int z^2 K(z) dz\big]^2 f_X(x)}
+\right]^{1/5}.\]</span></p>
+<p>This is somewhat more complicated compared to the KDE case, because
+we have to estimate</p>
+<ul>
+<li>the marginal density <span class="math inline">\(f_X(x)\)</span>,
+<ul>
+<li>let’s say that we already know how to do this, e.g. by KDE even
+though that requires choice of yet another bandwidth</li>
+</ul></li>
+<li>the local variance function <span class="math inline">\(\sigma^2(x)\)</span>, and</li>
+<li>the second derivative of the regression functions <span class="math inline">\(m&#39;&#39;(x)\)</span>.</li>
+</ul>
+<p>Rule of thumb algorithms exist to actually obtain some <span class="math inline">\(h_{opt}(x)\)</span> in practice starting from some
+initial bandwidth:</p>
+<ul>
+<li>use a higher order <span class="math inline">\(p\)</span>
+(e.g. <span class="math inline">\(p=3\)</span>) to estimate <span class="math inline">\(m&#39;&#39;(x)\)</span> with an inflated value of
+your current bandwidth</li>
+<li>assume that <span class="math inline">\(\sigma^2(x) =
+\sigma^2\)</span> is constant and estimate it from the residuals as
+<span class="math inline">\(\frac{1}{n-d} \sum_{i=1}^n [Y_i -
+\widetilde{m}&#39;&#39;(X_i)]\)</span>, where <span class="math inline">\(\widetilde{m}&#39;&#39;\)</span> is the estimator
+from the previous step and <span class="math inline">\(d\)</span> is the
+degrees of freedom of <span class="math inline">\(\widetilde{m}&#39;&#39;\)</span></li>
+<li>update the current bandwidth by the <span class="math inline">\(h_{opt}(x)\)</span> formula above</li>
+</ul>
+<p>and iterate these steps couple of times (to prove convergence is not
+really possible?).</p>
+<p>Again, like in the case of KDEs, the global bandwidth choice can be
+obtained by integration:</p>
+<ul>
+<li>calculate <span class="math inline">\(AMISE(\widehat{m}) = \int
+AMSE(\widehat{m}(x)) f_X(x) dx\)</span>, and</li>
+<li>set <span class="math inline">\(h_{opt} = \mathrm{arg\,min}_{h&gt;0}
+AMISE(\widehat{m})\)</span>,</li>
+</ul>
+<p>but the situation is not simplified very much.</p>
+<p><em>Note</em>: I hope this exemplifies why computational
+considerations (like the FFT usage for KDEs we spend a lot of time on
+last week) are important. Similar tricks can be used in local polynomial
+regression as well. However, next week we are going to study
+cross-validation, which is a much simpler, data-driven (i.e. without
+asymptotic arguments), and popular bandwidth (or more generally any
+tuning parameter) selection strategy.</p>
 </div>
 <div id="why-local-linear-is-the-order-of-choice" class="section level2">
 <h2>3.2 Why Local Linear is the Order of Choice?</h2>
 <p>Bias and variance can be calculated similarly also for higher order
-local polynomial regression estimators. In general</p>
+local polynomial regression estimators. In general:</p>
 <ul>
 <li>bias decreases with an increasing order</li>
 <li>variance increases with increasing order, but only for <span class="math inline">\(p=2k+1 \to p+1\)</span>, i.e. when increasing an
@@ -477,29 +601,49 @@ by making it <em>robust</em> (immune) to outliers.</p>
 <h1>5. Smoothing Splines</h1>
 <p>Let’s go back to least squares (there is a natural connection to
 likelihood, if we assume gaussianity) and penalize for roughness (2nd
-derivative is the most convenient one). Remarkably, solution to this
-optimization problem is known to be the natural cubic spline. While the
-optimization problem is over an infinite-dimensional space (of functions
-with square-integrable second derivatives, which is a Sobolev space – of
-all Sobolev spaces, only the one with order two is RKHS and hence allows
-for a finite-dimensional solution, right?), knowing that the solution is
-the natural cubic spline, it can be re-cast as a finite-dimensional
-problem, not too dissimilar to ridge regression.</p>
+derivative is the most convenient one): <span class="math display">\[\mathrm{arg\,min}_{g \in C^2} \sum_{i=1}^n \big[
+Y_i - g(X_i) \big]^2 + \lambda \int \big[ g&#39;&#39;(x) \big]^2
+dx,\]</span> where <span class="math inline">\(\lambda &gt; 0\)</span>
+is a tuning parameter controlling smoothness.</p>
+<p>Remarkably, solution to this optimization problem is known to be the
+natural cubic spline. While the optimization problem is over an
+infinite-dimensional space (of functions with square-integrable second
+derivatives, which is a Sobolev space – of all Sobolev spaces, only the
+one with order two is RKHS and hence allows for a finite-dimensional
+solution), knowing that the solution is the natural cubic spline, it can
+be re-cast as a finite-dimensional problem, not too dissimilar to ridge
+regression.</p>
 <p>While in the case of natural cubic spline there is some beautiful
 math justifying why to look for functions that can be written as linear
 combinations of predefined functions (which is a parametric problem, but
 the beautiful math describes how this is related to the non-parametric,
-infinite-dimensional problem), we can also adopt a more brute
-(parametric) viewpoint: let us simply assume that <span class="math inline">\(m\)</span> can be expressed as a linear
-combination of some basis functions. In statistic, <em>B-spline</em>
-basis is extremely popular. If we restrict the number of basis functions
-enough, no penalization may be needed anymore. In practice, we can meet
-both penalized and non-penalized approaches.</p>
+infinite-dimensional problem), we can also adopt a more brute viewpoint:
+let us simply assume that <span class="math inline">\(m\)</span> can be
+expressed as a linear combination of some basis functions. In
+statistics, <em>B-spline</em> basis is extremely popular. If we restrict
+the number of basis functions enough, no penalization may be needed
+anymore. In practice, we can meet both penalized and non-penalized
+approaches.</p>
 </div>
 <div id="references" class="section level1">
 <h1>References</h1>
+<p><a href="https://stat.ethz.ch/education/semesters/ss2010/CompStat/">M.
+Maechler’s and P. Buhlmann’s course notes</a></p>
+<p><a href="https://www2.karlin.mff.cuni.cz/~omelka/Vyuka_nmst434_2122.php">M.
+Omelka’s course notes</a></p>
 <p><a href="http://users.stat.umn.edu/~helwig/notes/smooth-notes.html">N.
 Helwig’s notes</a></p>
+</div>
+<div id="assignment" class="section level1">
+<h1>Assignment</h1>
+<p><a href="http://vita.had.co.nz/papers/density-estimation.html">Wickham
+(2011)</a> gives a comparison of univariate kernel density estimators
+available in R in terms of their speed and accuracy. As far as I know,
+there is no such comparison made w.r.t. the different non-parametric
+regression packages, such as <code>mgcv</code>’s <code>gam()</code>, the
+base distribution’s <code>ksmooth()</code>, <code>KernSmooth</code>s
+<code>locpoly()</code>, or <code>locpol</code>’s <code>locpol()</code>.
+A simulation study could make for a nice final project.</p>
 </div>
 
 
