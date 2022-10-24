@@ -2,8 +2,8 @@
 title: "Week 4: Kernel Density Estimation"
 subtitle: "MATH-517 Statistical Computation and Visualization"
 author: "Tomas Masak"
-date: "`r format(Sys.time(), '%b %d, %Y')`"
-#date: "September 21st 2021"
+# date: "`r format(Sys.time(), '%b %d, %Y')`"
+date: "October 14th 2022"
 output: beamer_presentation
 classoption: "presentation"
 theme: "Madrid"
@@ -106,7 +106,7 @@ edf_plot(50)
 
 $$ \widehat{f}(x) = \frac{\widehat{F}_n(x+h_n) - \widehat{F}_n(x-h_n)}{2h_n} $$
 
-  - we need $h_n \to 0_+$ for $n \to \infty$ in order to have any hope in consistency
+  - we need $h_n \to 0_+$ for $n \to 0$ in order to have any hope in consistency
 
 ## Consistency
 
@@ -148,7 +148,7 @@ The naive KDE can be written as
 $$
 \begin{split}
 \widehat{f}(x) &= \frac{1}{2 n h_n} \sum_{i=1}^n \mathbb{I}_{\big[X_i \in (x-h_n, x+h_n]\big]}\\
-&= \frac{1}{2 n h_n} \sum_{i=1}^n \mathbb{I}_{\big[-1 \leq \frac{X_i - x}{h_n} \leq 1]\big]} \\
+&= \frac{1}{2 n h_n} \sum_{i=1}^n \mathbb{I}_{\big[1 \leq \frac{X_i - x}{h_n} \leq 1]\big]} \\
 &= \frac{1}{n h_n} \sum_{i=1}^n K\left(\frac{X_i - x}{h_n} \right)
 \end{split}
 $$
@@ -171,8 +171,8 @@ where the \textbf{kernel} $K(\cdot)$ satisfies:
 \end{enumerate}
 \column{0.5\textwidth}
 \begin{enumerate}
-\item[4] $\lim_{|x| \to \infty} |x| K(x) = 0$ \\
-\item[5] $\sup_x |K(x)| < \infty$
+\item $\lim_{|x| \to \infty} |x| K(x) = 0$ \\
+\item $\sup_x |K(x)| < \infty$
 \end{enumerate}
 \end{columns}
 \end{exampleblock}
@@ -454,12 +454,11 @@ hist(faithful$eruptions, probability=T, main = "Eruption duration", xlab="time [
 plot(density(faithful$eruptions,bw=my_bw),main=paste("bw =",my_bw," & ","df =",round(my_df,5)),xlab="")
 ```
 
-## Assignment [5%]
+## Assignment 2 [5%]
 
 Slide "Bandwidth > Kernel" above gives a vague statement, that choosing bandwidth $h$ is more important than choosing a proper kernel. See this for yourself using a small simulation study. Specifically:
 
 * use Manual 09 to generate data from the Gaussian mixture $f$
-  - use the parameter values provided in the manual
 * repeat the following 200 times:
   - generate $N=100$ samples from the Gaussian mixture
   - perform density estimation, i.e. obtain $\widehat{f}$, for

@@ -2,8 +2,8 @@
 title: "Week 3: Graphics and Visualization"
 subtitle: "MATH-517 Statistical Computation and Visualization"
 author: "Tomas Masak"
-date: "`r format(Sys.time(), '%b %d, %Y')`"
-#date: "September 21st 2021"
+# date: "`r format(Sys.time(), '%b %d, %Y')`"
+date: "October 7th, 2022"
 output: beamer_presentation
 classoption: "presentation"
 theme: "Madrid"
@@ -389,7 +389,7 @@ Beware when exporting graphics.
 ## Different Kinds of Binning
 
 \centering
-\includegraphics[width=0.9\textwidth]{../Plots/bad_plotting/11.png}
+\includegraphics[width=0.6\textwidth]{../Plots/bad_plotting/11.png}
 
 ## Total
 

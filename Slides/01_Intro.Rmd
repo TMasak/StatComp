@@ -2,8 +2,8 @@
 title: "Week 1: Introduction & Software"
 subtitle: "MATH-517 Statistical Computation and Visualization"
 author: "Tomas Masak"
-date: "`r format(Sys.time(), '%b %d, %Y')`"
-#date: "September 21st 2021"
+# date: "`r format(Sys.time(), '%b %d, %Y')`"
+date: "September 23rd 2022"
 output: beamer_presentation
 classoption: "presentation"
 theme: "Madrid"
@@ -382,7 +382,7 @@ Fit:& $\widehat{\beta} = (X^\top X)^{-1} X^\top Y$ assuming $X$ is full-rank\\
 \end{columns}
 ```
 
-## Assignment
+## Assignment 1 [5 %]
 
 "**Assignment**" = **mandatory**, counts towards the final grade [5 %]
 

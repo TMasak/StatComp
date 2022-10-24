@@ -2,8 +2,8 @@
 title: "Week 5: Nonparametric Regression"
 subtitle: "MATH-517 Statistical Computation and Visualization"
 author: "Tomas Masak"
-date: "`r format(Sys.time(), '%b %d, %Y')`"
-#date: "September 21st 2021"
+# date: "`r format(Sys.time(), '%b %d, %Y')`"
+date: "October 21st 2022"
 output: beamer_presentation
 classoption: "presentation"
 theme: "Madrid"
@@ -255,7 +255,7 @@ $$\mathrm{arg\,min}_{\gamma \in \R^p} \sum_{i=1}^n \big[ Y_i - \gamma_1 e_1(x) -
   - can be related to smoothness when $e_j$'s get more wiggly with increasing $j$ (which is typical for most bases)
   - choices = assumptions
 
-## Assignment [5 %]
+## Assignment 3 [5 %]
 
 Create a [Shiny App](https://shiny.rstudio.com/tutorial/written-tutorial/lesson1/) or (alternatively) an R Markdown report exploring the (local, asymptotically optimal) bandwidth choice $h_{opt}(x)$ on slides 11 and 12 on simulated data example:
 
