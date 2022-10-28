@@ -12,7 +12,7 @@ header-includes:
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-Cross-validation (CV) is a way to asses the prediction capacity of a model by splitting the data set into several *folds*. It can be naturally used to choose between several candidate models (the one with the best prediction capacity). As such, it is often used to select tuning parameters of a model (e.g. the bandwidth in local regression or the parameter $\lambda$ in ridge regression or lasso).
+Cross-validation (CV) is a way to asses the prediction capacity of a model by splitting the data set into several *folds*. It can be naturally used to choose between several candidate models (choosing the one with the best prediction capacity). As such, it is often used to select tuning parameters of a model (e.g. the bandwidth in local regression or the parameter $\lambda$ in ridge regression or lasso).
 
 More generally, CV is often hailed as the overarching approach to tuning parameter selection by splitting the data set in a broad range of models/algorithms. However, when the problem is unsupervised (i.e. there is no response) and it is not clear how to use the model for prediction, one has to think carefully about how to devise a CV strategy.
 
@@ -65,13 +65,13 @@ Assume now that we have a sample $(x_1,y_1)^\top,\ldots, (x_N,y_N)^\top \in \R^{
 \end{equation}
 which naturally corresponds to the least squares criterion, $\frac{1}{N}\sum_{n=1}^N \big( y_n - m(x_n) \big)^2$, but other losses can be constructed, e.g. when overshooting $Y$ is more problematic than undershooting $Y$, the 0-1 loss (most notably in logistic regression), etc. 
 
-To know how good the model $\widehat{m}$ is, we would like to estimate the mean prediction error \eqref{eq:loss}. This would be quite simple if we had an additional data set $(x_1^\star,y_1^\star)^\top,\ldots, (x_K^\star,y_K^\star)^\top$ distributed the same an independent of the previous one. Then we could naturally estimate \eqref{eq:loss} as 
+To know how good the model $\widehat{m}$ is, we would like to estimate the mean prediction error \eqref{eq:loss}. This would be quite simple if we had an additional data set $(x_1^\star,y_1^\star)^\top,\ldots, (x_M^\star,y_M^\star)^\top$ distributed the same an independent of the previous one. Then we could naturally estimate \eqref{eq:loss} as 
 \[\frac{1}{M}\sum_{m=1}^M (y_k^\star - \widehat{m}(x_k^\star))^2.\]
 The reason why this estimator would work is that the model $\widehat{m}$ was trained on a *training* data set $(x_1,y_1)^\top,\ldots, (x_N,y_N)^\top$ independent of the *test* data set $(x_1^\star,y_1^\star)^\top,\ldots, (x_K^\star,y_K^\star)^\top$ used to evaluate its prediction performance.
 
 In reality, a new *test* data set is seldom available, but we can artificially construct it. By splitting the data set into the *training* part and *test* part, we can estimate both the model and its prediction performance. However, such an approach is statistically wasteful, and this is where CV comes in. We only need for the model to be trained on a different data that, and this can be achieved by estimating the expected loss of a model $m$ \eqref{eq:loss} with
 \[
-CV(m) := \frac{1}{N}\sum_{n=1}^N \big( y_n - \widehat{m}^{(-n)}(x_n) \big)^2,
+CV(\widehat{m}) := \frac{1}{N}\sum_{n=1}^N \big( y_n - \widehat{m}^{(-n)}(x_n) \big)^2,
 \]
 where $\widehat{m}^{(-n)}$ is the model fitted without the $n$-th observation. This generally means fitting the model $N$ times, which can be wasteful computationally.
 
@@ -119,7 +119,7 @@ CV(\lambda) = \frac{1}{N}\sum_{n=1}^N \big( y_n - \mathbf{x}_n^\top \widehat{\be
 \end{equation}
 where $\widehat{\beta}^{(-n)}$ is the ridge regression estimator (depending on the tuning parameter $\lambda$) constructed without the $n$-th observation. The goal is to show that \eqref{eq:cv_slow} can be calculated by fitting only the ridge full ridge regression model.
 
-Firstly, notice that $\widehat{\beta}^{(-n)} = (\mathbf{X}^\top + \lambda I - \mathbf{x}_n \mathbf{x}_n^\top)^{-1}(\mathbf{X} \mathbf{y} - \mathbf{x}_n y_n)$. Using the [Sherman-Morrison formula](https://en.wikipedia.org/wiki/Sherman%E2%80%93Morrison_formula), denoting $\mathbf{A} := \mathbf{X}^\top + \lambda I$ for the formula (and also denoting $\alpha_n := 1 - \mathbf{x}_n^\top \mathbf{A}^{-1} \mathbf{x}_n^\top$ in the formula's denominator for short), we have
+Firstly, notice that $\widehat{\beta}^{(-n)} = (\mathbf{X}^\top\mathbf{X} + \lambda I - \mathbf{x}_n \mathbf{x}_n^\top)^{-1}(\mathbf{X} \mathbf{y} - \mathbf{x}_n y_n)$. Using the [Sherman-Morrison formula](https://en.wikipedia.org/wiki/Sherman%E2%80%93Morrison_formula), denoting $\mathbf{A} := \mathbf{X}^\top\mathbf{X} + \lambda I$ for the formula (and also denoting $\alpha_n := 1 - \mathbf{x}_n^\top \mathbf{A}^{-1} \mathbf{x}_n^\top$ in the formula's denominator for short), we have
 \[
 \begin{split}
 \widehat{\beta}^{(-n)} &= \left( \mathbf{A}^{-1} - \frac{\mathbf{A}^{-1} \mathbf{x}_n \mathbf{x}_n^\top \mathbf{A}^{-1}}{1 - \mathbf{x}_n^\top \mathbf{A}^{-1} \mathbf{x}_n} \right) (X \mathbf{y} - \mathbf{x}_n y_n) \\
@@ -151,7 +151,7 @@ When the computational shortcut for the leave-one-out CV cannot be used, which i
 
 approximate criteria are typically used to achieve computational efficiency. An universal approch is the K-fold CV.
 
-The data set is first randomly split into $K \in \mathbb{N}$ subsets (*folds*) of approximately equal size. That is $J_k \subset \{ 1,\ldots,N \}$ for $k = 1,\ldots,K$ such that $J_k \cap j_{k'} = \emptyset$ for $k \neq k'$ and $\bigcup_{k=1}^K J_k = \{ 1,\ldots,n \}$ are created by dividing a random permutation of the data indices $\{ 1,\ldots,n \}$.
+The data set is first randomly split into $K \in \mathbb{N}$ subsets (*folds*) of approximately equal size. That is $J_k \subset \{ 1,\ldots,N \}$ for $k = 1,\ldots,K$ such that $J_k \cap J_{k'} = \emptyset$ for $k \neq k'$ and $\bigcup_{k=1}^K J_k = \{ 1,\ldots,n \}$ are created by dividing a random permutation of the data indices $\{ 1,\ldots,n \}$.
 
 The leave-one-out CV criterion for a model $m$ and the least squares loss is then replaced by
 \[
@@ -179,7 +179,7 @@ y <- 1/(1-x)
 plot(x,y,type="l")
 ```
 
-Then $CV(\lambda)$ is calculated for every $\lambda = lambda_1,\ldots,\lambda_j$ and the $\lambda$ with the smallest value of $CV(\lambda)$ is chosen.
+Then $CV(\lambda)$ is calculated for every $\lambda = \lambda_1,\ldots,\lambda_j$ and the $\lambda$ with the smallest value of $CV(\lambda)$ is chosen.
 
 # Bandwidth Selection for KDE
 
@@ -207,17 +207,69 @@ The basic idea of the above approach to CV for KDE can be also used for some oth
 
 # No. of Component Selection for PCA
 
-discuss PCA: best subspace fitting data, connection to covariance
+Assume we a **centered** have multivariate data set $\mathbf x_1,\ldots,\mathbf x_N \in \R^p$. There are several equivalent views of PCA:
+
+1. Principal components (PCs) are given successively as the (mutually orthogonal) directions along which the variance in the data is maximized. Since variance in the data is captured by the empirical covariance $\widehat{\Sigma} = N^{-1}\sum_{n=1}^N \mathbf x_n \mathbf x_n^\top$, the PCs can be found as solutions to successive optimization problems:
+\[
+\begin{split}
+v_1 &= \underset{\| v \|=1}{\mathrm{arg\,min}} v^\top \widehat{\boldsymbol{\Sigma}} v \\
+v_2 &= \underset{\| v \|=1, v^\top v_1 = 0}{\mathrm{arg\,min}} v^\top \widehat{\boldsymbol{\Sigma}} v \\
+&\;\;\vdots
+\end{split}
+\]
+The plot below (source: wiki) visualizes this for $p=2$.
+
+```{r, echo=F, out.width='30%', fig.align='center'}
+knitr::include_graphics('../Plots/PCA1.png')
+```
+
+2. The first $r$ principal components also provide the minimum-error projection of the $p$-dimensional data points onto a space of dimension $r$:
+\[
+\displaystyle \underset{V \in \R^{p \times r}, V^\top V = I}{\mathrm{arg\,min}} \sum_{i=1}^n \| x_i - \mathbf V \mathbf V^\top x_i \|_2^2
+\]
+The plot below visualizes the errors when $(p=3)$-dimensional data set is projected onto $(r=2)$-dimensional subspace.
+
+```{r, echo=F, out.width='50%', fig.align='center'}
+knitr::include_graphics('../Plots/PCA2.png')
+```
+
+3. Finally, if the data set is centered (i.e. $\bar{\mathbf x}_N = N^{-1} \sum_{n=1}^N \mathbf{x}_n = 0$), this is also equivalent to finding the best low-rank approximation of the data matrix:
+\[
+\underset{\rank(\mathbf L) = r}{\mathrm{arg\,min}} \|\mathbf X -\mathbf L \|_2^2
+\]
+Any rank-$r$ matrix $\mathbf L \in \R^{n \times p}$ can be thought of as a product of $\mathbf{A} \in \R^{n \times r}$ and $\mathbf{V} \R^{p \times r}$ in the sense of matrix product $\mathbf{L} = \mathbf{A} \mathbf{V}^\top$. Visually, we think of this as a product of a long matrix $\mathbf{A}$ and a wide matrix $\mathbf{V}$, which should approximate well the original data matrix $\mathbf X$, as visualized on the plot below (where $\mathbf{X} \approx \mathbf{A} \mathbf{U}^\top$).
+```{r, echo=F, out.width='50%', fig.align='center'}
+knitr::include_graphics('../Plots/PCA3.png')
+```
+
+In all three cases, principal components are found by *truncating* the SVD of the data matrix $\mathbf{X} = \mathbf{U} \mathbf{D} \mathbf{V}^top$. We understand SVD in its *economic* form. For $n > p$, this means
+
+* $\mathbf{U} \in \R^{n \times p}$ has orthogonal columns
+* $\mathbf{D} \in \R^{p \times p}$ is diagonal with positive non-increasing diagonal
+* $\mathbf{V} \in \R^{p \times p}$ is a basis of $\R^p$
+
+By *truncating* the SVD at rank $r$, we mean replacing the diagonal of $\mathbf{D}$, denoted by $\mathbf{d}$, by $\widetilde{\mathbf{d}} = (d_1,\ldots,d_r,0,0,\ldots,0)^\top \in \R^p$, leading to $\widetilde{\mathbf{D}}$. Then, $\mathbf{U} \widetilde{\mathbf{D}} \mathbf{V}^\top$ is the best $r$-rank approximation of $\mathbf{X}$ given as the solution to the optimization problem in point 3. above. Now, in the product $\mathbf{U} \widetilde{\mathbf{D}} \mathbf{V}^\top$, many columns of $\mathbf{U}$ and $\mathbf{V}$ are useless, because they get multiplied only by zeros in the product; only the first $r$ columns matter. So let us rewrite $\widetilde{\mathbf{U}} \widetilde{\mathbf{D}} \widetilde{\mathbf{V}}^\top$ for $\widetilde{\mathbf{U}} \in \R^{n \times r}$ and $\widetilde{\mathbf{V}} \in \R^{p \times r}$. Now, this $\widetilde{\mathbf{V}}$ is the solution to the optimization problem in point 2. above. As for point 1. above, $v_1$ is the first column of $\widetilde{\mathbf{V}}$, $v_2$ is the second column of $\widetilde{\mathbf{V}}$, and so on.
+
+PCA is the workhorse of data analysis, since it offers the optimal data-driven basis in which the data can be optimally represented. As such, PCA finds it usage in virtually all areas of statistics, machine learning, data science, etc.
 
 *Note*: PCA is often used for regression (or classification), i.e. when there is a response variable $Y$. In that case, it is easy to devise a CV scheme, since we are in the supervised case. But, on the other hand, PCA is also often used in the unsupervised case as an explanatory technique or for factor analysis. Moreover the partial least squares (PLS) commonly outperform PCA in the supervised case, which is why we focus here on the unsupervised case.
 
-rule-of-thumb methods such as percentage of variance explained, or non-automated methods such as the scree-plot (the elbow plot)
+Due to the immense popularity of PCA, there exist many ways of choosing the tuning parameter $r$, i.e. the number of PCs to retain. Those include
 
-How to do CV here? Again, we are in an unsupervised case. Many people try the following CV scheme:
+* rule-of-thumb methods such as percentage of variance explained
+* non-automated methods such as the scree-plot (the elbow plot)
+* cross-validation
 
-* sdfs
+But how to do CV, when we are in an unsupervised case? Many people try the following CV scheme:
 
-but that just doesn't work, because a bigger sub-space will alway fit a data point better (there is no trade-off here).
+  * split data into $K$ folds $J_1,\ldots,J_K$
+  * **for** $k=1,\ldots,K$
+    - solve $\widehat{\mathbf L} = \underset{\mathrm{rank}(\mathbf L) = r}{\mathrm{arg\,min}} \|\mathbf X[J_k^c,] -\mathbf L \|_2^2$
+    - calculate $Err_k(r) = \sum_{j \in J_k} \| x_j - P_{\widehat{L}} x_j \|_2^2$
+  * **end for**
+  * choose $\widehat{r} = \underset{r}{\mathrm{arg\,min}} \sum_{k=1}^K Err_k(r)$
+
+but that just doesn't work, because a bigger sub-space will always fit a data point better (there is no trade-off here). In other words, as $r\nearrow$ we have $\| x_j - P_{\widehat{L}} x_j \| \searrow$, so $r$ is overestimated. 
 
 In the PCA bible (Jolliffe, 2002), there are two other ways how to do CV for PCA, but one of them is outdated and the second just plain wrong (as shown [here](https://www.researchgate.net/publication/5638191_Cross-validation_of_component_models_A_critical_look_at_current_methods)).
 
@@ -225,14 +277,26 @@ There are several ways how to do CV for PCA properly:
 
 1. Artificially turn the unsupervised problem into a supervised one:
 
-    * sdfa
-    * sfad
-  
-2. Modify the KDE approach:
+    This is just modifying the wrong approach above. The problem in the approach above has a poor choice of $Err_k(r)$. If we replace this for something sensible, which will actually capture some bias-variance trade-off, it may work. Assume that the rows $\mathbf{x}_n \in \R^p$, $n=1,\ldots,N$, of the data matrix $\mathbf{X} = (x_{n,j})_{n,j=1}^{N,p}$ are i.i.d. realizations of a Gaussian random variable $X$. That is, the rows have with a mean $\mu \in \R^p$ and a covariance $\Sigma \in \R^{p \times p}$. We will assume that $\mathrm{rank}(\Sigma) = r$. We proceed as in the wrong approach above, with the body of the for-loop is replaced by:
+    
+    * Estimate $\mu$ and $\Sigma$ (the empirical estimator truncated to rank $r$) using data that are not in $J_k$. When the data are centered, this is equivalent to solving the optimization problem for $\mathbf L$ due to the equivalence between different formulations of PCA, but here we remove the assumption that the data is centered.
+    * Split every data point $\mathbf{x}$ belonging to $J_k$ into a "missing" part $\mathbf{x}^{miss}$ that will be used for validation and an "observed" part $\mathbf{x}^{obs}$.
+    * predict the missing part from the observed part using the estimators of $\mu$ and $\Sigma$
+      - For $X\sim \mathcal{N}(\mu,\Sigma)$ split into $X = (X_1,X_2)^\top$ and $\mu=(\mu_1,\mu_2)^\top$ and $\Sigma = \big(\Sigma_{ij}\big)_{i,j=1}^2 \in \R^{p \times p}$, the conditional expectation of $X_1$ given $X_2$ is given by
+      \[
+      \E_{\mu,\Sigma}\big[ X_1 \big| X_2=\mathbf x_2\big] = \mu_1 + \Sigma_{12} \Sigma_{22}^{-1} (\mathbf x_2-\mu_2)
+      \]
+      - plug in the estimators of $\mu$ and $\Sigma$ in the previous formula to obtain $\widehat{\mathbf{x}}_{miss}$
+    * Define
+    \[
+    Err_k(r) = \sum_{n \in J_k} \| \mathbf x_n^{obs} - \widehat{\mathbf x}_n^{obs} \|_2^2
+    \]
+    
+    Now, there is a bias-variance trade-off, hidden basically in how well $\Sigma$ is approximated by a low-rank matrix. When $r$ is too small, there are some discarded dependencies and prediction suffers. When $r$ is too big, the estimator of $\Sigma$ is too variable and prediction suffers again. 
 
-    maybe leave this out, and at the end of the section only say that this can be done, or one can also do the missing data approach directly via matrix completion
+2. Missing data approach:
 
-3. Missing data approach:
+    This approach is basically the same as above, only the estimators of $\mu$ and $\Sigma$ are calculated from all available data points. For completeness, I describe it below (and I apologize for slightly different notation).
 
     Here it is assumed that the rows $\mathbf{x}^{(n)} \in \R^p$, $n=1,\ldots,N$, of the data matrix $\mathbf{X} = (x_{n,j})_{n,j=1}^{N,p}$ are i.i.d. realizations of a Gaussian random variable $X$. That is, the rows have with a mean $\mu \in \R^p$ and a covariance $\Sigma \in \R^{p \times p}$. We will assume that $\mathrm{rank}(\Sigma) = r$ for $r=1,\ldots,R$, and compare how well diferent values of $r$ fit the data as follows.
     
@@ -242,11 +306,9 @@ There are several ways how to do CV for PCA properly:
     \]
     randomly into $K$ folds, denoted $J_1,\ldots,J_K$, and for every single fold $J_k$ we perform the following:
     
-    **Step I:** Estimate the mean $\mu$ and the covariance $\Sigma$ using only entries $x_{n,j}$ such that $(n,j) \notin J_k$. Denote the estimates $\widehat{\mu}$ and $\widehat{\Sigma}$. We will learn how to perform this step next time.
-    
-    **Step II:** Perform spectral truncation to have $\widehat{\Sigma}$ of rank $r$. That is, calculate the eigendecomposition $\widehat{\Sigma} = U \Lambda U^\top$ with $\Lambda = \mathrm{diag}(\lambda_1,\ldots,\lambda_p)$, set $\widetilde{\Lambda} := \mathrm{diag}(\lambda_1,\ldots,\lambda_r,0,\ldots,0)$, and update $\widehat{\Sigma} := U \widetilde{\Lambda} U^\top$
-    
-    **Step III:** Predict entries $x_{n,j}$ such that $(n,j) \in J_k$ as the conditional expectation of the unobserved entries in every row given the observed entries in that row, i.e. $\widehat{\mathbf{x}}^{(n)}_{obs} := \E_{\widehat{\mu}, \widehat{\Sigma}}\big[ \mathbf{x}^{(n)}_{miss} \big| \mathbf{x}^{(n)}_{obs} \big]$ for $n=1,\ldots,N$. Assuming w.l.o.g. that
+    * Estimate the mean $\mu$ and the covariance $\Sigma$ using only entries $x_{n,j}$ such that $(n,j) \notin J_k$. Denote the estimates $\widehat{\mu}$ and $\widehat{\Sigma}$. We will learn how to perform this step next time.
+    * Perform spectral truncation to have $\widehat{\Sigma}$ of rank $r$. That is, calculate the eigendecomposition $\widehat{\Sigma} = U \Lambda U^\top$ with $\Lambda = \mathrm{diag}(\lambda_1,\ldots,\lambda_p)$, set $\widetilde{\Lambda} := \mathrm{diag}(\lambda_1,\ldots,\lambda_r,0,\ldots,0)$, and update $\widehat{\Sigma} := U \widetilde{\Lambda} U^\top$
+    * Predict entries $x_{n,j}$ such that $(n,j) \in J_k$ as the conditional expectation of the unobserved entries in every row given the observed entries in that row, i.e. $\widehat{\mathbf{x}}^{(n)}_{miss} := \E_{\widehat{\mu}, \widehat{\Sigma}}\big[ \mathbf{x}^{(n)}_{miss} \big| \mathbf{x}^{(n)}_{obs} \big]$ for $n=1,\ldots,N$. Assuming w.l.o.g. that
     \[
     \mathbf{x}^{(n)} = \begin{pmatrix}\mathbf{x}^{(n)}_{miss} \\ \mathbf{x}^{(n)}_{obs} \end{pmatrix},
     \qquad \mu = \begin{pmatrix}\mu_{miss}  \\ \mu_{obs} \end{pmatrix}, \qquad
@@ -254,10 +316,14 @@ There are several ways how to do CV for PCA properly:
     \]
     i.e. assuming that all the unobserved entries come before all the observed entries (which can be achieved by permuting the columns and permuting accordingly $\mu$ and $\Sigma$ and their estimates), the predictions are given by
     \[
-    \widehat{\mathbf{x}}^{(n)}_{miss} := \mu_{miss} + \Sigma_{12} \Sigma_{obs}^{-1} \widehat{\mathbf{x}}^{(n)}_{obs}.
+    \widehat{\mathbf{x}}^{(n)}_{miss} := \mu_{miss} + \Sigma_{12} \Sigma_{obs}^{-1} (\mathbf{x}^{(n)}_{obs} - \widehat{\mu}_{obs}).
     \]
     
     Finally, compare the predictions with the observations. That is, calculate
     \[
     CV(r) = \sum_{k=1}^K \frac{1}{|J_k|} \sum_{(n,j) \in J_k} \Big( x_{n,j} - \widehat{x}_{n,j} \Big)^2.
     \]
+    
+3. Modify the KDE approach.
+
+4. Use matrix completion, a.k.a. PCA with missing data (beyond the scope of this course).
