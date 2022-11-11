@@ -19,23 +19,88 @@ Maximum likelihood is the dominant form of estimation in statistics. Recall that
 * there is missing data (e.g. censored observations, Example 1 below) complicating the calculations, or
 * it is beneficial to think of our data as if there were some components missing, because it would simplify the calculation (e.g. estimating mixture distributions, Example 2 below).
 
-TODO: describe the EM algorithm
+Let us denote
+
+* $X_{obs}$ are the **observed** random variables
+* $X_{miss}$ are the **missing** random variables
+* $\ell_{comp}(\theta)$ is the **complete** log-likelihood of $X = (X_{obs},X_{miss})$
+  - maximizing this to obtain MLE is supposed to be *simple*
+  - $\theta$ denotes all the parameters, e.g. contains $\mu$ and $\Sigma$
+  
+Our task is to maximize $\ell_{obs}(\theta)$, the **observed** log-likelihood of $X_{obs}$.
+
+**EM Algorithm**: Start from an initial estimate $\theta^{(0)}$ and for $l=1,2,\ldots$ iterate the following two steps until convergence:
+
+* **E-step**: calculate $$\E_{\theta^{(l-1)}}\big[\ell_{comp}(\theta) \big| X_{obs} = \mathbf{x}_{obs}\big] =: Q\big(\theta,\theta^{(l-1)}\big)$$
+* **M-step**: optimize $$\mathrm{arg\,max}_{\theta}\; Q\big(\theta,\theta^{(l-1)}\big) =: \theta^{(l)}$$
 
 The E-step, i.e. calculating the expected likelihood, sometimes coincides with calculating expected values of the unobserved data (with the current parameters) and plugging them into the complete likelihood, but this is not always the case (see Example 3 below)! Actually, as will become clear, it is the case if and only if the complete log-likelihood is linear (w.r.t. the full data).
 
 ## Example 1: Censored Observations
 
-Mehdi Lecture 8 - censored exponential distribution - there it is just about plugging in expectated values for the censored variables, takze je to nevychovne :/
+See the slides of Week 7.
 
 ## Example 2: Mixing Proportions
 
-Jako v sesitu pro Gaussovsky pripad.
+Let $X_1,\ldots,X_N$ be i.i.d. from
+$$f(x) = (1-\tau) \varphi_{\mu_1,\sigma_1^2}(x) + \tau \varphi_{\mu_2,\sigma_2^2}(x) = (1-\tau) \frac{1}{\sqrt{2 \pi \sigma_1^2}} \exp\left( - \frac{1}{2} \left[ \frac{x-\mu_1}{\sigma_1} \right]^2 \right) + \tau \frac{1}{\sqrt{2 \pi \sigma_2^2}} \exp\left( - \frac{1}{2} \left[ \frac{x-\mu_2}{\sigma_2} \right]^2 \right)$$
+
+The task is to estimate $\theta = (\mu_1,\mu_2,\sigma_1^2,\sigma_2^2,\tau)^\top$ via MLE, i.e. solve
+\[
+\mathrm{arg\,max}_\theta \underbrace{\sum_{n=1}^N \log f(X_n)}_{\ell_{obs}(\theta)}.
+\]
+
+Straightforward solution via derivatives is not possible because of the superposition structure of $f(x)$, which breaks the product structure and thus the log-likelihood does not have a nice form. For example
+\[
+\frac{\partial}{\partial \tau} \ell_{obs}(\theta) = \sum_{n=1}^N \left[ \frac{-\varphi_{\mu_1,\sigma_1^2}(x) + \varphi_{\mu_2,\sigma_2^2}(x)}{(1-\tau) \varphi_{\mu_1,\sigma_1^2}(x) + \tau \varphi_{\mu_2,\sigma_2^2}(x)} \right].
+\]
+Similarly, all the other derivatives depend on the whole $\theta$ in a non-linear fashion, and hence analytic solution is hard to obtain. Of course, we could solve the first-order conditions numerically, which would lead to some difficult cyclic optimization. Instead, the solution via the EM algorithm presented below is quite elegant.
+
+We already know how to generate $X_1,\ldots,X_N$:
+
+* first we toss a coin to decide whether to draw from $\varphi_{\mu_1,\sigma_1^2}$ or from $\varphi_{\mu_2,\sigma_2^2}$, and
+* then we draw from the decided Gaussian.
+
+We can use this knowledge to introduce additional variables (unobserved, related to the coin toss) such that the complete likelihood will retain a product structure and thus will be easier to work with.
+
+Let $Z = \mathbb{I}_{\left[X_n \text{ drawn from } \varphi_{\mu_2,\sigma_2^2}\right]} \sim \mathrm{Bern}(\tau)$ be i.i.d. and independent of $X$'s. Then the joint density of $(X,Z)^\top$ can be written as
+\[
+f_{X,Z}(x,z) = \underbrace{\left[\varphi_{\mu_1,\sigma_1^2}(x)\right]^{1-z} \left[\varphi_{\mu_2,\sigma_2^2}(x)\right]^z}_{f_{X|Z}(x|z)} \underbrace{\tau^z (1-\tau)^{1-z}}_{f_Z(z)}.
+\]
+Now that we have a nice product structure, things will fall in place. The log-likelihood is
+\[
+\ell_{comp}(\theta) = \sum_{n=1}^N \left\{ (1-Z_n)\left[ \log \varphi_{\mu_1,\sigma_1^2}(X_n) + \log(1-\tau) \right] + Z_n\left[ \log \varphi_{\mu_2,\sigma_2^2}(X_n) + \log(\tau) \right] \right\}
+\]
+
+**E-step**: Notice that utilizing linearity, calculating $\E_{\theta^{(l-1)}}\big[\ell_{comp}(\theta) \big| X_1,\ldots,X_n\big]$ amounts only to evaluating only $\E_{\theta^{(l-1)}}\big[Z_n \big| X_1,\ldots,X_n\big]$. This can be done using the Bayes theorem:
+\[
+\E_{\theta^{(l-1)}}\big[\ell_{comp}(\theta) \big| X_1,\ldots,X_n\big] = P(Z_n=1|X_n) = \frac{P(X_n|Z_n=1) P(Z_n=1)}{P(X_n)} = \frac{\varphi_{\mu_2,\sigma_2^2}(X_n) \tau^{(l-1)}}{f(X_n)} =: \gamma_n^{(l-1)}
+\]
+and hence the E-step amounts to plugging-in the contemporary estimated proportions $\gamma_n^{(l-1)}$ instead of the unobserved $Z_n$'s into the complete likelihood. This gives us
+$$
+\begin{align*}
+Q\big(\theta,\theta^{(l-1)}\big) &=  \log(1-\tau) \left(N - \sum_{n=1}^{N} \gamma^{(l-1)}_n\right) + 
+    \log(\tau) \sum_{n=1}^{N} \gamma^{(l-1)}_n +\\ 
+    &\qquad + \sum_{n=1}^{N} \big((1-\gamma^{(l-1)}_n\big) \log \varphi_{\mu_1,\sigma_1^2}(X_n) + \sum_{n=1}^{N} \gamma^{(l-1)}_n \log \varphi_{\mu_2,\sigma_2^2}(X_n).
+\end{align*}
+$$
+
+**M-step**: Now, we can solve the first-order conditions relatively easily, because the first part of $Q\big(\theta,\theta^{(l-1)}\big)$ corresponding to $\tau$ resembles binomial log-likelihood, while the last two summands resemble Gaussian log-likelihoods, only weighted. Taking derivatives by individual variables and setting them to zero gives us
+\[
+\begin{split}
+\tau^{(l)} &= N^{-1} \gamma, \quad \text{where} \quad \gamma = \sum_{n=1}^N \gamma^{(l-1)}_n \\
+\mu_2^{(l)} &= \gamma^{-1} \sum_{n=1}^N \gamma^{(l-1)}_n X_N \\
+(\sigma_2^2)^{(l)} &= \gamma^{-1} \sum_{n=1}^N \gamma^{(l-1)}_n \big(X_n - \mu_2^{(l)} \big)^2 \\
+\mu_1^{(l)} &= (N-\gamma)^{-1} \sum_{n=1}^N \big(1-\gamma^{(l-1)}_n\big) X_N \\
+(\sigma_1^2)^{(l)} &= (N-\gamma)^{-1} \sum_{n=1}^N \big(1-\gamma^{(l-1)}_n\big) \big(X_n - \mu_1^{(l)} \big)^2 \\
+\end{split}
+\]
 
 ## Example 3: Multivariate Gaussian with Missing Entries
 
 Assume $\mathbf{x}^{(1)},\ldots,\mathbf{x}^{(N)}$ is a random sample from a $p$-variate Gaussian distribution with mean $\mu$ and covariance $\Sigma$, but not all entries of $\mathbf{x}^{(1)},\ldots,\mathbf{x}^{(N)}$ are observed. The goal is to estimate $\mu$ and $\Sigma$ from the incomplete measurements. We will denote $\mathbf{x}^{(n)}_{obs}$ the observed part of $\mathbf{x}^{(n)}$ and we will denote $\mu^{(n)}_{obs}$ and $\Sigma^{(n)}_{obs}$ the mean and the covariance of $\mathbf{x}^{(n)}_{obs}$, i.e. $\mu^{(n)}_{obs}$ is just a sub-vector of $\mu$ and $\Sigma^{(n)}_{obs}$ is a sub-matrix of $\Sigma$.
 
-This is one of the instances where a programming syntax can be simpler than math. In `R`, having our data as a matrix `X` with `NA` for the missing entries, we could do for every $n=1,\ldots,n$
+This is one of the instances where a programming syntax can be simpler than math. In `R`, having our data as a matrix `X` with `NA` for the missing entries, we could do for every $n=1,\ldots,N$
 ```{r,eval=F}
 #     X - a data matrix of size N x p
 #    mu - a mean vector of size p
@@ -149,17 +214,42 @@ Notice that, even though it might feel quite natural, calculating the expected c
 
 # Convergence Properties
 
-Jako v sesitu.
+Firstly, we show that EM algorithm has the so-called monotone convergence property.
+
+**Proposition 1**: $\ell_{obs}(\theta^{(l)}) \geq \ell_{obs}(\theta^{(l-1)})$
+
+**Proof**: The joint density for the complete data $X$ satisfies $f_\theta(X) = f_\theta(X_{miss}|X_{obs}) f_\theta(X_{obs})$ and hence
+$$\ell_{comp}(\theta) = \log f_\theta(X_{miss}|X_{obs}) + \ell_{obs}(\theta).$$
+Notice that $\ell_{obs}(\theta) = \ell_{comp}(\theta) - \log f_\theta(X_{miss}|X_{obs})$ does not depend on $X_{miss}$ ($\ell_{obs}(\theta)$ clearly does not) and hence we can condition on $X_{obs}$ under any value of the parameter $\theta$ without really doing anything:
+$$\ell_{obs}(\theta) = \underbrace{\E_{\theta^{(l-1)}} \big[ \ell_{comp}(\theta) \big| X_{obs} \big]}_{= Q\big(\theta,\theta^{(l-1)}\big)} - \underbrace{\E_{\theta^{(l-1)}} \big[ \log f_\theta(X_{miss}|X_{obs}) \big| X_{obs} \big]}_{ =: H\big(\theta,\theta^{(l-1)}\big)}$$
+And so when we take $\widehat{\theta}^{(l)} = \mathrm{arg\,max}_{\theta}\; Q\big(\theta,\widehat{\theta}^{(l-1)}\big)$, we only have to show we have not increased $- H\big(\cdot, \theta^{(l-1)}\big)$. Dividing and multiplying by $f_{\theta^{(l-1)}}(X_{miss}|X_{obs})$ and using the [Jensen's inequality](https://en.wikipedia.org/wiki/Jensen%27s_inequality), we obtain just that:
+$$
+\begin{split}
+H\big(\theta,\theta^{(l-1)}\big) &= \E_{\theta^{(l-1)}} \left[ \log\frac{f_\theta(X_{miss}|X_{obs})}{f_{\theta^{(l-1)}}(X_{miss}|X_{obs})} \middle| X_{obs} \right] + H\big(\theta^{(l)},\theta^{(l-1)}\big) \\
+&\leq \log \underbrace{\E_{\theta^{(l-1)}} \left[ \frac{f_\theta(X_{miss}|X_{obs})}{f_{\theta^{(l-1)}}(X_{miss}|X_{obs})} \middle| X_{obs} \right]}_{= \int \frac{f_\theta(x_{miss}|X_{obs})}{f_{\theta^{(l-1)}}(x_{miss}|X_{obs})} f_{\theta^{(l-1)}}(x_{miss}|X_{obs}) d x_{miss} = 1} + H\big(\theta^{(l)},\theta^{(l-1)}\big)
+\end{split}
+$$
+and so indeed $H\big(\theta,\theta^{(l-1)}\big) \leq H\big(\theta^{(l)},\theta^{(l-1)}\big)$. <div style="text-align: right">**Q.E.D.**</div>
 
 ## Speed of Convergence
 
-Jako v sesitu
+Let $M:\Theta \to \Theta$ be the mapping that is implicitly defined by the EM algorithm, i.e. let $\theta^{(l)} = M\big(\theta^{(l-1)}\big)$ for $l = 1,2\ldots$. Let us call $M$ the *iteration map* and assume that it actually exists and that $\{ \theta^{(l)} \}$ converges to some $\theta^\star$. Then $\theta^\star$ must be a fixed point of the iteration map:
+$$\theta^\star = M(\theta^\star).$$
+In the neighborhood of $\theta^\star$, we have by Taylor expansion:
+$$\theta^{(l)} - \theta^\star \approx \mathbf{J}(\theta^\star) \; (\theta^{(l)} - \theta^\star),$$
+where $\mathbf{J}(\theta)$ is the Jacobian (the matrix of partial derivatives of all the components of $M$).
+
+If $\| \mathbf{J}(\theta^\star) \| < 1$, then $M$ is a contraction and we may hope for convergence, with smaller $\| \mathbf{J}(\theta^\star) \|$ corresponding to a faster convergence speed, though the convergence rate is always linear (a.k.a. exponential, because $\| \theta^{(l)} - \theta^\star \| \approx \| \mathbf{J}(\theta^\star)\|^l \; \| \theta^{(0)} - \theta^\star \|$).
+
+Interestingly, it can be shown that
+$$ \mathbf{J}(\theta^\star) = \mathbf{J}_{comp}^{-1}(\theta^\star)\; \mathbf{J}_{miss}(\theta^\star),$$
+where $\mathbf{J}_{comp}(\theta^\star)$ is [Fisher information matrix](https://en.wikipedia.org/wiki/Fisher_information) of the complete data set at $\theta^\star$, and $\mathbf{J}_{miss}(\theta^\star)$ similarly but of the missing data only. Thus the EM convergence rate is given by the information ratio, which measures the proportion of information about $\theta$ that is missing, by only observing $X_{obs}$ compared to the full $X$. The greater the proportion of missing information, the slower the rate of convergence.
 
 # MM algorithms
 
-Generally speaking, closed-form MLEs are rather an exception than a rule. There are many non-trivial cases where MLE has to be obtained via numerical optimization. In this section, I will explain that EM the algorithm, despite the statistical jargon evolving around the concept of missing data and calculating expected likelihoods, can also be seen as an optimization algorithm for finding MLEs numerically.
+Generally speaking, closed-form MLEs are rather an exception than a rule. There are many non-trivial cases where MLE has to be obtained via numerical optimization. In this section, I will explain that the EM algorithm, despite the statistical jargon evolving around the concept of missing data and calculating expected likelihoods, can also be seen as an optimization algorithm for finding MLEs numerically.
 
-Apart from coping with missing data via the EM algorithm, we all know another instance of a numerical algorithm that is commonly applied to calculate MLEs: iteratively reweighted least squares (IRLS) used to estimate parameters in generalized linear models. Actually, both IRLS and EM are special cases of a more general class of algorithms called the MM algorithms. The letters MM stand either for "majorization-minimization" or "minorization-maximization". Let us focus on the former. Assume we want to maximize a function $f : \R^p \to R$.
+Apart from coping with missing data via the EM algorithm, we all know another instance of a numerical algorithm that is commonly applied to calculate MLEs: iteratively reweighted least squares (IRLS) used to estimate parameters in generalized linear models. Actually, both IRLS and EM are special cases of a more general class of algorithms called the MM algorithms. The letters MM stand either for "majorization-minimization" or "minorization-maximization". Let us focus on the former. Assume we want to minimize a function $f : \R^p \to R$.
 
 **Definition**: A function $g(\mathbf{x} | \mathbf{x}^{(l)})$ is said to *majorize* function $f : \R^p \to R$ at $\mathbf{x}^{(l)}$ provided
 \[
@@ -194,23 +284,27 @@ Here we will cast the EM algorithm in the MM framework. While we have developed 
 \end{split}
 \]
 
-From the proof of Proposition ??, we have (incorporating the extra sign)
+From the proof of Proposition 1 above, we have (incorporating the extra sign)
 \[
-- \ell_{obs}(\theta) = Q(\theta|\theta^{(l-1)}) + H(\theta, \theta^{(l-1)})
+- \ell_{obs}(\theta) = - Q(\theta|\theta^{(l-1)}) + H(\theta, \theta^{(l-1)})
 \]
-and since still $H(\theta, \theta^{(l-1)}) \leq H(\theta^{(l-1)}, \theta^{(l-1)})$, we obtain
+and since as shown in the proof of Proposition 1 above $H(\theta, \theta^{(l-1)}) \leq H(\theta^{(l-1)}, \theta^{(l-1)})$, we obtain
 \[
-- \ell_{obs} = Q(\theta|\theta^{(l-1)}) + H(\theta^{(l-1)}, \theta^{(l-1)}) =: \widetilde{Q}(\theta|\theta^{(l-1)})
+- \ell_{obs}(\theta) \leq - Q(\theta|\theta^{(l-1)}) + H(\theta^{(l-1)}, \theta^{(l-1)}) =: \widetilde{Q}(\theta|\theta^{(l-1)})
 \]
 with equality at $\theta = \theta^{(l-1)}$.
 
 Hence $\widetilde{Q}(\theta|\theta^{(l-1)})$ is majorizing $- \ell_{obs}(\theta)$ at $\theta = \theta^{(-l)}$. Finally, since $H(\theta^{(l-1)}, \theta^{(l-1)})$ is a constant (w.r.t. $\theta$), minimizing $Q$ is equivalent to minimizing $\widetilde{Q}$.
 
-We have shown above that EM is a special case of the MM algorithm. If we remove the extra sign, it is clear that the E-step of ?? minorizes the observed log-likehood (which is being maximized) up to a constant.
+We have shown above that EM is a special case of MM. If we remove the extra sign, it is clear that the E-step (of the standard EM formulation targetted to maximize the log-likelihood) minorizes the observed log-likehood up to a constant.
+
+### Example 2 Revisited
+
+
 
 ## Convergence of MM algorithms
 
-**Proposition.** (*Lange, 2013, Proposition 12.4.4) Suppose that all stationary points of $f(\mathbf{x})$ are isolated and that the stated differentiability, coerciveness, and convexity assumptions
+**Proposition.** (Lange, 2013, Proposition 12.4.4) Suppose that all stationary points of $f(\mathbf{x})$ are isolated and that the stated differentiability, coerciveness, and convexity assumptions
 are true. Then any sequence of iterates $\mathbf{x}^{(l)} = M(\mathbf{x}^{(l-1)})$ generated
 by the iteration map $M(\mathbf {x})$ of the MM algorithm possesses a limit, and
 that limit is a stationary point of $f(\mathbf {x})$. If $f(\mathbf {x})$ is strictly convex, then
@@ -218,27 +312,31 @@ $\lim_{l \to \infty} \mathbf{x}^{(l)}$ is the minimum point.
 
 The previous proposition does not properly state its assumptions, but just briefly:
 
-1. differentiability -- conditions on the majorizing functions guaranteeing differentiability of the iteration map $M$
+1. differentiability -- conditions on the majorizing functions guaranteeing differentiability of the iteration map $M$.
 2. coerciveness -- a function $f: \R^p \to R$ is *coercive* if, on any line in $R^p$, it escapes to infinity at $\pm \infty$.
 3. convexity -- this is clear, $f$ has to be convex. On one hand, this assumption is just a technical assumption, algorithms with the monotone convergence property will in practice always converge to a stationary point. On the other hand, we are mostly interested in the strictly convex cases anyway. 
 
 There are two points to be made here:
 
-* In numerical optimization, there are many different approaches to do the same thing, and in the case of nice (simple) problems they coincide. Not all IRLS algorithms can be seen as MM algorithms, but the EM algorithm is just a special case of EM. That doesn't mean, however, that taking expectation to "complete" data has to be the most natural way to find minorizations, but in statistics this is what we often encounter.
-* Optimization problems in statistics are often nice from the optimization perspective: the most important distributions lead log-concave likelihoods (e.g. exponential families), hence convexity; likelihood functions are typically coercive; and taking expectations of log-likelihood (which is typically itself differentiable) amounts to integration, hence differentiability.
+* In numerical optimization, there are many different approaches to do the same thing, and in the case of nice (simple) problems they coincide. Not all IRLS algorithms can be seen as MM algorithms, but the EM algorithm is just a special case of MM. That doesn't mean, however, that taking expectation to "complete" data has to be the most natural way to find minorizations, but in statistics this is what we often encounter.
+* Optimization problems in statistics are often nice from the optimization perspective: the most important distributions lead to log-concave likelihoods (e.g. exponential families), hence convexity; likelihood functions are typically coercive; and taking expectations of log-likelihood (which is typically itself differentiable) amounts to integration, hence differentiability.
 
 # Some Comments about EM
 
 * It is numerically stable, which is a consequence of the monotone convergence property of all MM algorithms.
 * Computational costs per iteration are typically very favorable.
-* However, the algorithm tends to converge very slowly if the landscape around the optimum (or the stationary point of convergence) is flat. Again, this is true for all MM algorithm, but in statistics this does not pose serious issues, since early stopping is rarely a problem in statistics. The uncertainty that arises from randomness usually outweighs numerical errors. In other words, if the landscape around the optimum, is flat, we might end up with an estimator far away from the truth. But at the same time, the confidence region for the parameter will be adequately large.
-* The convergence can be easily monitored by looking at $| f(\mathbf{x}^{(l)}) - f(\mathbf{x}^{(l-1)})|$.
+* However, the algorithm's speed of convergence is slow, and can behave poorly in regions of a flat landscape.
+  - Again, this is true for all MM algorithm, but in statistics this often poses no serious issues, since early stopping is rarely a problem in statistics. The uncertainty that arises from randomness usually outweighs numerical errors. In other words, if the landscape around the optimum, is flat, we might end up with an estimator far away from the truth. But at the same time, the confidence region for the parameter will be adequately large.
+  - On the other hand, this can be a problem in case of a flat landscape not around the optimum, but one that is met by the algorithm due to a poor starting point. For this reason, starting point should be chosen carefully, and numerous starting points should be examined.
+* The convergence can be monitored by looking at $\|\mathbf{x}^{(l)} - \mathbf{x}^{(l-1)} \|$ and $| f(\mathbf{x}^{(l)}) - f(\mathbf{x}^{(l-1)})|$.
 * The M-step often does not have a closed form solution either, but is typically much simpler than the original problem. If iterative algorithm is used for the M-step, early stopping for the inner iteration is desirable.
 
 # References
 
 * Lange, K. (2013). *Optimization*. 2nd Edition.
+* Lange, K. (2016). *MM optimization algorithms*.
 * Dempster, A. P., N. M. Laird \& D. B. Rubin. (1977) "Maximum likelihood from incomplete data via the EM algorithm." *Journal of the Royal Statistical Society: Series B (Methodological)* 39.1: 1-22.
     - one of the most cited papers in statistics of all time
 
 * Little, R. J., \& Rubin, D. B. (2019). *Statistical analysis with missing data*. 3rd Edition.
+* McLachlan, G.J., \& Krishan, T. (2007). *The EM algorithm and extensions*.
