@@ -70,11 +70,11 @@ And so when we take $\widehat{\theta}^{(l)} = \mathrm{arg\,max}_{\theta}\; Q\big
 Dividing and multiplying by $f_{\theta^{(l-1)}}(X_{miss}|X_{obs})$ and using the [Jensen's inequality](https://en.wikipedia.org/wiki/Jensen%27s_inequality), we obtain just that:
 $$
 \begin{split}
-H\big(\theta,\theta^{(l-1)}\big) &= \E_{\theta^{(l-1)}} \left[ \log\frac{f_\theta(X_{miss}|X_{obs})}{f_{\theta^{(l-1)}}(X_{miss}|X_{obs})} \middle| X_{obs} \right] + H\big(\theta^{(l)},\theta^{(l-1)}\big) \\
-&\leq \log \underbrace{\E_{\theta^{(l-1)}} \left[ \frac{f_\theta(X_{miss}|X_{obs})}{f_{\theta^{(l-1)}}(X_{miss}|X_{obs})} \middle| X_{obs} \right]}_{= \int \frac{f_\theta(x_{miss}|X_{obs})}{f_{\theta^{(l-1)}}(x_{miss}|X_{obs})} f_{\theta^{(l-1)}}(x_{miss}|X_{obs}) d x_{miss} = 1} + H\big(\theta^{(l)},\theta^{(l-1)}\big)
+H\big(\theta,\theta^{(l-1)}\big) &= \E_{\theta^{(l-1)}} \left[ \log\frac{f_\theta(X_{miss}|X_{obs})}{f_{\theta^{(l-1)}}(X_{miss}|X_{obs})} \middle| X_{obs} \right] + H\big(\theta^{(l-1)},\theta^{(l-1)}\big) \\
+&\leq \log \underbrace{\E_{\theta^{(l-1)}} \left[ \frac{f_\theta(X_{miss}|X_{obs})}{f_{\theta^{(l-1)}}(X_{miss}|X_{obs})} \middle| X_{obs} \right]}_{= \int \frac{f_\theta(x_{miss}|X_{obs})}{f_{\theta^{(l-1)}}(x_{miss}|X_{obs})} f_{\theta^{(l-1)}}(x_{miss}|X_{obs}) d x_{miss} = 1} + H\big(\theta^{(l-1)},\theta^{(l-1)}\big)
 \end{split}
 $$
-and so indeed $H\big(\theta,\theta^{(l-1)}\big) \leq H\big(\theta^{(l)},\theta^{(l-1)}\big)$.
+and so indeed $H\big(\theta,\theta^{(l-1)}\big) \leq H\big(\theta^{(l-1)},\theta^{(l-1)}\big)$.
 
 ## Speed of Convergence
 
@@ -126,7 +126,7 @@ f(\mathbf{x}^{(l)}) &= g(\mathbf{x}^{(l)} | \mathbf{x}^{(l)}).
 \end{exampleblock}
 \bigskip
 
-In other words, the surface $\mathbf{x} \mapsto g(\mathbf{x} | \mathbf{x}^{(l)})$ is above the surface $f(\mathbf{x})$, and it is tangent to it at $\mathbf{x}^{(l)}$.
+In other words, the surface $\mathbf{x} \mapsto g(\mathbf{x} | \mathbf{x}^{(l)})$ is above the surface $f(\mathbf{x})$, and it is touching it at $\mathbf{x}^{(l)}$.
 
 ```{r, out.width='50%', fig.align="center"}
 knitr::include_graphics('../Plots/MM_alg.png')

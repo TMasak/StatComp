@@ -738,16 +738,16 @@ inequality</a>, we obtain just that: <span class="math display">\[
 H\big(\theta,\theta^{(l-1)}\big) &amp;= \mathbb{E}_{\theta^{(l-1)}}
 \left[
 \log\frac{f_\theta(X_{miss}|X_{obs})}{f_{\theta^{(l-1)}}(X_{miss}|X_{obs})}
-\middle| X_{obs} \right] + H\big(\theta^{(l)},\theta^{(l-1)}\big) \\
+\middle| X_{obs} \right] + H\big(\theta^{(l-1)},\theta^{(l-1)}\big) \\
 &amp;\leq \log \underbrace{\mathbb{E}_{\theta^{(l-1)}} \left[
 \frac{f_\theta(X_{miss}|X_{obs})}{f_{\theta^{(l-1)}}(X_{miss}|X_{obs})}
 \middle| X_{obs} \right]}_{= \int
 \frac{f_\theta(x_{miss}|X_{obs})}{f_{\theta^{(l-1)}}(x_{miss}|X_{obs})}
 f_{\theta^{(l-1)}}(x_{miss}|X_{obs}) d x_{miss} = 1} +
-H\big(\theta^{(l)},\theta^{(l-1)}\big)
+H\big(\theta^{(l-1)},\theta^{(l-1)}\big)
 \end{split}
 \]</span> and so indeed <span class="math inline">\(H\big(\theta,\theta^{(l-1)}\big) \leq
-H\big(\theta^{(l)},\theta^{(l-1)}\big)\)</span>.
+H\big(\theta^{(l-1)},\theta^{(l-1)}\big)\)</span>.
 <div style="text-align: right">
 <strong>Q.E.D.</strong>
 </div>
@@ -812,7 +812,7 @@ f(\mathbf{x}^{(l)}) &amp;= g(\mathbf{x}^{(l)} | \mathbf{x}^{(l)}).
 \]</span></p>
 <p>In other words, the surface <span class="math inline">\(\mathbf{x}
 \mapsto g(\mathbf{x} | \mathbf{x}^{(l)})\)</span> is above the surface
-<span class="math inline">\(f(\mathbf{x})\)</span>, and it is tangent to
+<span class="math inline">\(f(\mathbf{x})\)</span>, and it is touching
 it at <span class="math inline">\(\mathbf{x}^{(l)}\)</span>.</p>
 <p>Assume our goal is to minimize a function <span class="math inline">\(f : \mathbb{R}^p \to R\)</span>. The basic idea of
 the MM algorithm is to start from an initial guess <span class="math inline">\(\mathbf{x}^{(0)}\)</span> and for <span class="math inline">\(l=1,2,\ldots\)</span> iterate between the
