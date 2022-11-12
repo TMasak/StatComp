@@ -12,7 +12,6 @@ footer: "Copyright (c) 2022, EPFL"
 urlcolor: blue
 header-includes:
   - \usepackage{bm}
-  - \usepackage{stmaryrd}
   - \newcommand{\E}{\mathbb{E}}
   - \newcommand{\R}{\mathbb{R}}
   - \newcommand{\argmin}{\mathrm{arg\,min\;}}
@@ -139,7 +138,7 @@ EM will allow us to act like if we knew everything -- even when we don't or when
 **EM Algorithm**: Start from an initial estimate $\widehat{\theta}^{(0)}$ and for $l=1,2,\ldots$ iterate the following two steps until convergence:
 
 * **E-step**: calculate $\E_{\widehat{\theta}^{(l-1)}}\big[\ell_{comp}(\theta) \big| \bm{X}_{obs} = \mathbf{x}_{obs}\big] =: Q\big(\theta,\widehat{\theta}^{(l-1)}\big)$
-* **M-step**: optimize $\mathrm{arg\,max}_{\theta}\; Q\big(\theta,\widehat{\theta}^{(l-1)}\big)$
+* **M-step**: optimize $\mathrm{arg\,max}_{\theta}\; Q\big(\theta,\widehat{\theta}^{(l-1)}\big) =: \widehat{\theta}^{(l)}$
 
 ## Ex.1: Censored Observations
 
@@ -189,11 +188,11 @@ Estimating mixture distributions for modelling multimodality
 
 Let $X^{(1)}, \dots, X^{(N)}$ be iid.\ distributed as $X$ with probability density
 $$
- f(x) = (1-\tau)\, \varphi\!\left(\frac{x-\mu_1}{\sigma_1}\right) + \tau\, \varphi\!\left(\frac{x-\mu_2}{\sigma_2}\right) 
+ f_{\boldsymbol{\theta}}(x) = (1-\tau)\, \varphi_{\mu_1, \sigma_1}\left(x\right) + \tau\, \varphi_{\mu_2, \sigma_2}\left(x\right) 
 $$
 where
 
-* $\varphi$ is the density of a standard normal, and  
+* $\varphi_{\mu, \sigma}$ is the density of a Gaussian of mean $\mu$ and standard deviation $\sigma$, and  
 * $\mu_1 < \mu_2$ and $\sigma_1^2, \sigma_2^2$ are the means and variances of the mixture components, 
 and 
 * $\tau \in (0,1)$ is the share of the second component
@@ -203,14 +202,14 @@ stacked in a vector $\boldsymbol{\theta} = (\tau, \mu_1,\mu_2,\sigma_1^2, \sigma
 
 However, log-likelihood has no nice form:
 $$
-  \ell_{obs}(\boldsymbol{\theta}) = \sum_{n=1}^N \log \left( (1-\tau)\, \varphi\!\left(\frac{x-\mu_1}{\sigma_1}\right) \overset{{\color{red}\lightning}}{\boldsymbol{+}} \tau\, \varphi\!\left(\frac{x-\mu_2}{\sigma_2}\right) \right)
+  \ell_{obs}(\boldsymbol{\theta}) = \sum_{n=1}^N \log \left( (1-\tau)\, \varphi_{\mu_1, \sigma_1}\left(X_n\right) {\boldsymbol{+}} \tau\, \varphi_{\mu_2, \sigma_2}\left(X_n\right) \right)
 $$
 **Trick**: add latent iid.\ component indicators $Z_n \sim Bernoulli(\tau)$ 
 such that $X^{(n)} \mid Z^{(n)} = 0 \sim N(\mu_1, \sigma_1^2)$ and $X^{(n)} \mid Z^{(n)} = 1 \sim N(\mu_2, \sigma_2^2)$.
 
 Given $Z^{(n)} = z^{(n)}$, $n=1, \dots, N$, the joint likelihood can be written as
 $$
-  L_{comp}(\boldsymbol{\theta}) = (1-\tau)^{N_1} \tau^{N_2} \prod_{n=1}^{N} \varphi\left( \frac{X^{(n)}-\mu_1}{\sigma_1}\right)^{(1-Z^{(n)})}  \varphi\left( \frac{X^{(n)}-\mu_2}{\sigma_2}\right)^{Z^{(n)}}
+  L_{comp}(\boldsymbol{\theta}) = (1-\tau)^{N_1} \tau^{N_2} \prod_{n=1}^{N} \varphi_{\mu_1, \sigma_1}\left( X^{(n)}\right)^{(1-Z^{(n)})}  \varphi_{\mu_2, \sigma_2}\left( X^{(n)}\right)^{Z^{(n)}}
 $$
 with $N_2 = \sum_{n=1}^{N} Z^{(n)}$ and $N_1 = N - N_2$.
 
@@ -221,17 +220,17 @@ with $N_2 = \sum_{n=1}^{N} Z^{(n)}$ and $N_1 = N - N_2$.
 \begin{align*}
   \ell_{comp}(\boldsymbol{\theta}) &= \log L_{comp}(\boldsymbol{\theta}) = 
   N_1 \log(1 - \tau) + N_2 \log(\tau)\ +\\ 
-  &+ \sum_{n=1}^{N} (1-Z^{(n)}) \log\varphi\left( \frac{X^{(n)}-\mu_1}{\sigma_1}\right) + \sum_{n=1}^{N} Z^{(m)} \log\varphi\left( \frac{X^{(n)}-\mu_2}{\sigma_2}\right)
+  &+ \sum_{n=1}^{N} (1-Z^{(n)}) \log\varphi_{\mu_1, \sigma_1}\left(X^{(n)}\right) + \sum_{n=1}^{N} Z^{(m)} \log\varphi_{\mu_2, \sigma_2}\left( X^{(n)} \right)
 \end{align*}
 such that, we obtain
 \begin{align*}
 \E_{\widehat{\boldsymbol{\theta}}^{(l-1)}}&\big[\ell_{comp}(\boldsymbol{\theta}) \big| \bm{X} = \mathbf{x} \big] =
     \log(1-\tau) (N - \sum_{n=1}^{N} p^{(l-1)}_n) +  
     \log(\tau) \sum_{n=1}^{N} p^{(l-1)}_n +\\ 
-    &+ \sum_{n=1}^{N} (1-p^{(l-1)}_n) \log\varphi\left( \frac{x^{(n)}-\mu_1}{\sigma_1} \right) + 
-    \sum_{n=1}^{N} p^{(l-1)}_n \log\varphi\left( \frac{x^{(n)}-\mu_2}{\sigma_2}\right)
+    &+ \sum_{n=1}^{N} (1-p^{(l-1)}_n) \log\varphi_{\mu_1, \sigma_1}\left( x^{(n)} \right) + 
+    \sum_{n=1}^{N} p^{(l-1)}_n \log\varphi_{\mu_2, \sigma_2}\left(x^{(n)}\right)
 \end{align*}
-with $p^{(l-1)}_n = \E_{\widehat{\theta}^{(l-1)}}\big[ Z^{(n)} \big| X^{(n)} = x^{(n)} \big] \overset{Bayes}{=} \frac{\varphi\left( \frac{x^{(n)}-\hat{\mu}_2^{(l-1)}}{\hat{\sigma}_2^{(l-1)}}\right) \hat{\tau}^{(l-1)}}{f_{\hat{\boldsymbol{\theta}}^{(l-1)}}(x^{(n)})}.$
+with $p^{(l-1)}_n = \E_{\widehat{\theta}^{(l-1)}}\big[ Z^{(n)} \big| X^{(n)} = x^{(n)} \big] \overset{Bayes}{=} \frac{\varphi_{\hat{\mu}_2^{(l-1)}, \hat{\sigma}_2^{(l-1)}}\left( x^{(n)}\right) \hat{\tau}^{(l-1)}}{f_{\hat{\boldsymbol{\theta}}^{(l-1)}}(x^{(n)})}.$
 
 
 ## Ex.2: Mixture distributions -- M-step
@@ -244,8 +243,8 @@ Hence, $Q\big(\boldsymbol{\theta},\widehat{\boldsymbol{\theta}}^{(l-1)}\big)$ ni
 Q\big(&\boldsymbol{\theta},\widehat{\boldsymbol{\theta}}^{(l-1)}\big) =\\
     &\mathbf{A:}\quad \log(1-\tau) (N - \sum_{n=1}^{N} p^{(l-1)}_n) +  
     \log(\tau) \sum_{n=1}^{N} p^{(l-1)}_n +\\ 
-    &\mathbf{B:}\quad + \sum_{n=1}^{N} (1-p^{(l-1)}_n) \log\varphi\left( \frac{x^{(n)}-\mu_1}{\sigma_1} \right) +\\ 
-    &\mathbf{C:}\quad + \sum_{n=1}^{N} p^{(l-1)}_n \log\varphi\left( \frac{x^{(n)}-\mu_2}{\sigma_2}\right)
+    &\mathbf{B:}\quad + \sum_{n=1}^{N} (1-p^{(l-1)}_n) \log\varphi_{\mu_1, \sigma_1}\left( x^{(n)} \right) +\\ 
+    &\mathbf{C:}\quad + \sum_{n=1}^{N} p^{(l-1)}_n \log\varphi_{\mu_2, \sigma_2}\left( x^{(n)} \right)
 \end{align*}
 which can be optimized separately, where $\mathbf{A}$ has the form of a binomial and $\mathbf{B}$ and $\mathbf{C}$ of (weighted) Gaussian log-likelihood 
 $\Rightarrow$ optimize accordingly. 
@@ -354,7 +353,7 @@ Example 2:
 Example 3:
 
 * likelihood of observed data easy to formulate, yet harder to optimize directly
-* no linearity in log-likelihood $\Rightarrow$ no imputation, more effort to compute expected likelihood
+* no linearity in log-likelihood $\Rightarrow$ no imputation, more effort to compute expected likelihood (though still relatively simple, since exponential family)
 
 ## References
 
