@@ -419,6 +419,10 @@ Donald Knuth (1997, 3rd ed.) *The Art of Computer Programming*, vol. 2
 
 Robert \& Casella (2010) *Introducing Monte Carlo methods with R*
 
+\vfill
+
+[Feedback for the small project - Manual 11](https://htmlpreview.github.io/?https://github.com/TMasak/StatComp/blob/master/Manuals/11_SmallProjFeedback.html)
+
 ## Assignment [5 %]
 
 We currently have 3 ways of generating Gaussian samples in `R`:
@@ -439,6 +443,7 @@ For 50 simulation runs, and for all three methods:
    F_eval <- pnorm(sort(X))
    KS_stats <- max(abs(F_hat_eval - F_eval))
    ```
+   
 Compare the three methods using your simulation results.
 
 
