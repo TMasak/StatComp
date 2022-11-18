@@ -1,0 +1,65 @@
+---
+title: "General Feedback for Small Projects"
+output:
+  html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+This file contains some remarks about general shortcomings we noticed in many small projects. Most of them are related to style rather than hard mathematical facts. However,
+
+* communicating results is extremely important in statistics (even more so than in other fields) as it often governs decision making, and
+* all the projects could have been strictly better if avoiding some of these pitfalls.
+
+The goal of this project was exploration reported in R Markdown (as opposed to e.g. explanatory data analysis written as a proper report in Latex), and hence most of the general remarks did not lead to any points lost. The remark may also seem pedantic for an `html` output, but I am going to write them as such, in a perfectionist's way, because you can easily tune them down. But at the end of the day, the goal of any report is to **communicate what you have done**, and for that the report needs to be above all **comprehensible**.
+
+I will be present for the exercise class on November 25, so you can either
+
+* ask me about a project-specific feedback there, or
+* if privacy is desirable, feel free to send me an e-mail with some slots (during which you can come to my office -- in the project groups!) proposed. 
+
+Please not that I won't be available on November 21 and 22, but otherwise I am quite free (apart from Fridays, of course).
+
+## General Remarks
+
+1. Consistency is the most important thing for a statistician.
+  - jumping between different citation styles is bad
+  - having some captions centered above the figure produced by R and others flushed right below using Markdown is annoying
+2. Save space for better readability.
+  - plots that convey little information don't have to be large, several (related) plots can be put next to each other on the same line, etc.
+  - even in an `html` file, unnecessary scrolling back and forth when reading a report is annoying
+  - a plot frame with one or two boxplots is a waste of space (e.g. histograms would be better)
+  - barplots can often be replaced by tables to both save space and improve readability
+  - in general, if a plot only shows like 3 numbers and is not important for any argument made, it should not be a plot
+3. Story-telling matters.
+  - it is important to grasp attention with an introduction (and describe at the same time what to expect from a report)
+  - re-iterate the most important ideas/results in several places
+  - comment on plots even if they are self-explanatory
+4. More on plots.
+  - text in figures (labels, etc.) should be of similar size as the main text
+  - labels have to be readable, e.g. no overlaying etc.
+  - captions are necessary and should make the plot self-contained (without looking at the paragraphs around it)
+5. Less is sometimes more.
+  - showing a scatterplot only to colors to it based on a group of two on the next plot, then adding one regression line, and then two regression lines on the fourth plot... just dilutes the important parts
+  - Barplots colored by an additional variable should probably be replaced by a table (potentially colored by the cell
+  values -- coloring for better readability only).
+6. List of references should be itemized or enumerated (in order to be readable).
+7. Avoid using local paths.
+  - reproducibility of the report itself!
+8. Transforming variables.
+  - if your plots look bad because of a clear skewing in one of the variables, transform the varible (typically plot it on a log-scale)
+  - if plotting on a log-scale, consider `log10` or `log2` to have better interpretability
+  
+  
+
+
+
+
+
+
+
+
+
+
