@@ -414,7 +414,7 @@ an <span class="math inline">\(\widehat{\lambda}\)</span> estimator of
 the parameter vector <span class="math inline">\(\lambda\)</span>,
 or</li>
 <li>non-parametrically by the empirical distribution function <span class="math display">\[
-\widehat{F}_N(x) = \frac{1}{N} \sum_{n=1}^N I(X_n \leq x)
+\widehat{F}_N(x) = \frac{1}{N} \sum_{n=1}^N \mathbb{I}_{[X_n \leq x]}
 \]</span></li>
 </ul>
 <pre class="r"><code>edf_plot &lt;- function(N){
@@ -461,8 +461,8 @@ the characteristics of the sampling distribution) are more readily
 available. Consider the following diagram <span class="math display">\[
 \begin{eqnarray}
 \text{Sampling (real world):} \quad &amp; F &amp;\Longrightarrow
-X_1,\ldots,X_N &amp;\Longrightarrow \theta =
-\widehat{\theta}(\widehat{F}_N) \\
+X_1,\ldots,X_N &amp;\Longrightarrow \widehat{\theta} =
+\theta(\widehat{F}_N) \\
 \text{Resampling (bootstrap world):} \quad &amp; \widehat{F}_N
 &amp;\Longrightarrow X_1^\star,\ldots,X_N^\star &amp;\Longrightarrow
 \widehat{\theta}^\star = \theta(\widehat{F}_N^\star)
@@ -476,8 +476,8 @@ further benefits.</p>
 looking for a one-sided CI <span class="math inline">\([\widehat{\theta}(\alpha),\infty)\)</span> with
 coverage <span class="math inline">\(1-\alpha\)</span>, that is we
 search for <span class="math inline">\(\widehat{\theta}_\alpha\)</span>
-such that <span class="math inline">\(P( \theta \leq
-\widehat{\theta}(\alpha)) = \alpha\)</span>. We know that <span class="math display">\[
+such that <span class="math inline">\(P( \widehat{\theta}(\alpha) \leq
+\theta) = \alpha\)</span>. We know that <span class="math display">\[
 T = \sqrt{N}\frac{\bar{X}_N - \theta}{\widehat{\sigma}} \sim t_{n-1}
 \quad \Rightarrow \quad P(T \leq t_{n-1}(\alpha)) = \alpha
 \]</span> and so we get a CI with exact coverage by expressing <span class="math inline">\(\theta\)</span> from the inequality <span class="math inline">\(T \leq t_{n-1}(\alpha)\)</span>: <span class="math display">\[
@@ -489,7 +489,7 @@ i.i.d. with <span class="math inline">\(\mathbb{E}X_1^2 &lt;
 \infty\)</span>, we have from the CLT that <span class="math inline">\(T
 \stackrel{d}{\to} \mathcal{N}(0,1)\)</span> and thus <span class="math display">\[
 P( \theta \leq \widehat{\theta}(\alpha)) \approx \alpha \quad
-\text{for}\quad \widehat{\theta}(\alpha) =
+\text{for}\quad \widehat{\theta}(\alpha) = \bar{X}_N -
 \frac{\widehat{\sigma}}{\sqrt{N}} z(\alpha),
 \]</span> where <span class="math inline">\(z(\alpha)\)</span> is the
 <span class="math inline">\(\alpha\)</span>-quantile of the standard
@@ -630,7 +630,7 @@ parametric on non-parametric estimate</li>
 = g(\widehat{\theta},\theta) = g(\theta[\mathcal{X}],\theta)\)</span> is
 of interest
 <ul>
-<li>e.g. <span class="math inline">\(T = \sqrt{N}(\widehat{\theta},
+<li>e.g. <span class="math inline">\(T = \sqrt{N}(\widehat{\theta} -
 \theta)\)</span></li>
 </ul></li>
 </ul>
@@ -641,18 +641,18 @@ of interest
 \begin{cases}
 \quad\mathcal{X}_1^\star = \{ X_{1,1}^\star,\ldots,X_{1,N}^\star \}
 \quad \Longrightarrow \quad T_1^\star =
-g(\theta[\mathcal{X}_1^\star],\theta) \\
+g(\theta[\mathcal{X}_1^\star],\theta[\mathcal{X}]) \\
 \quad\qquad\vdots \\
 \quad\mathcal{X}_B^\star = \{ X_{B,1}^\star,\ldots,X_{B,N}^\star \}
 \;\;\Longrightarrow \quad T_B^\star =
-g(\theta[\mathcal{X}_B^\star],\theta)
+g(\theta[\mathcal{X}_B^\star],\theta[\mathcal{X}])
 \end{cases}
 \end{eqnarray}
 \]</span> and estimate the unknown distribution <span class="math inline">\(F_T(x) = P(T \leq x)\)</span> by the empirical
 distribution of <span class="math inline">\(T_1^\star,\ldots,
 T_B^\star\)</span>, i.e. by <span class="math display">\[
-\widehat{F}_{T,B}^\star(x) = \frac{1}{B}\sum_{b=1}^B I(T_b^\star \leq
-x).
+\widehat{F}_{T,B}^\star(x) = \frac{1}{B}\sum_{b=1}^B
+\mathbb{I}_{[T_b^\star \leq x]}.
 \]</span> Any characteristic of <span class="math inline">\(F_T\)</span>
 can be estimated by the corresponding characteristic of <span class="math inline">\(\widehat{F}_{T,B}^\star\)</span></p>
 <p>For example, the quantiles <span class="math inline">\(q^\star(\alpha)\)</span> in <a href="#running_ex">the running example above</a> can be approaximated by
@@ -660,8 +660,8 @@ the quantiles of this empirical distribution.</p>
 <p><em>Note:</em> The bootstrap resamples are obtained by sampling with
 replacement from the data <span class="math inline">\(X_1,\ldots,X_N\)</span>. But there is a natural
 question: how large the number of resamples <span class="math inline">\(B\)</span> should be? That depends on the
-characteristic of interest. To approximate quantiles, at least <span class="math inline">\(B=1000\)</span>, but rather <span class="math inline">\(B=1000\)</span>, is advisable, while to estimate
-the variance, <span class="math inline">\(B=100\)</span> is usually
+characteristic of interest. To approximate quantiles, at least <span class="math inline">\(B=10^3\)</span>, but rather <span class="math inline">\(B=10^4\)</span>, is advisable, while to estimate
+the variance, <span class="math inline">\(B=10^2\)</span> is usually
 deemed enough.</p>
 <div id="some-theory" class="section level2">
 <h2>Some Theory</h2>
@@ -681,11 +681,11 @@ theorem</a>: <span class="math display">\[
 \overset{a.s.}{\to} 0 \quad \text{as} \quad B \to \infty.
 \]</span> Hence the question is how does <span class="math display">\[
 \sup_{x} \Big| F_T^\star(x) - F_T(x) \Big|
-\]</span> behave as <span class="math inline">\(B \to
+\]</span> behave as <span class="math inline">\(N \to
 \infty\)</span>.</p>
 <p><strong>Theorem.</strong> Let <span class="math inline">\(\mathbb{E}X_1^2 &lt; \infty\)</span> and <span class="math inline">\(T = h(\bar{X}_N)\)</span>, where <span class="math inline">\(h\)</span> is continuously differentiable at <span class="math inline">\(\mu := \mathbb{E}X_1\)</span> and such that <span class="math inline">\(h(\mu) \neq 0\)</span>. Then <span class="math display">\[
 \sup_{x} \Big| F_T^\star(x) - F_T(x) \Big| \overset{a.s.}{\to} 0 \quad
-\text{as} \quad B \to \infty.
+\text{as} \quad N \to \infty.
 \]</span></p>
 <p>The previous theorem shows consistency of the bootstrap or smooth
 transformations of the empirical average. It also holds for random
@@ -773,11 +773,11 @@ not just of <span class="math inline">\(\Sigma\)</span>. Critically, the
 bootstrap will fail if <span class="math inline">\(\mathrm{var}(\widehat{\theta}) = \infty\)</span>,
 which can actually happen even when the asymptotic normality holds.</p>
 <p><strong>Example:</strong> Let <span class="math inline">\(X_1,\ldots,X_N\)</span> be a random sample from
-the density <span class="math inline">\(f(x) = 3/4^4 I(x \geq
-1)\)</span>. From the CLT we have <span class="math inline">\(\sqrt{N}(\bar{X}_N - 3/2) \to
+the density <span class="math inline">\(f(x) = 3/4^4 \mathbb{I}_{[(x
+\geq 1]}\)</span>. From the CLT we have <span class="math inline">\(\sqrt{N}(\bar{X}_N - 3/2) \to
 \mathcal{N}(0,3/4)\)</span>. Taking <span class="math inline">\(g(x) =
 \exp(x^4)\)</span>, the delta-theorem gives us <span class="math display">\[
-\sqrt{N}\Big( g\big( \bar{X}_n - \big) - g(3/2) \Big) \to
+\sqrt{N}\Big( g\big( \bar{X}_n\big) - g(3/2) \Big) \to
 \mathcal{N}\big(0,[g&#39;(3/2)]^2 3/4 \big)
 \]</span> But the bootstrap will not work in this case, since even <span class="math inline">\(\mathbb{E}g\big( \bar{X}_n \big) =
 \infty\)</span>, see the code below.</p>
@@ -850,11 +850,14 @@ depending on what values of the statistics testify against the
 hypothesis, we can estimate the p-value as either</p>
 <ul>
 <li><span class="math inline">\(\widehat{\text{p-val}} = \frac{1}{B+1}
-\left( 1 + \sum_{b=1}^B I(T_b^\star \geq T) \right)\)</span>,</li>
+\left( 1 + \sum_{b=1}^B \mathbb{I}_{[T_b^\star \geq T]}
+\right)\)</span>,</li>
 <li><span class="math inline">\(\widehat{\text{p-val}} = \frac{1}{B+1}
-\left( 1 + \sum_{b=1}^B I(T_b^\star \leq T) \right)\)</span>, or</li>
+\left( 1 + \sum_{b=1}^B \mathbb{I}_{[T_b^\star \leq T]}
+\right)\)</span>, or</li>
 <li><span class="math inline">\(\widehat{\text{p-val}} = \frac{1}{B+1}
-\left( 1 + \sum_{b=1}^B I(|T_b^\star| \geq |T|) \right)\)</span>.</li>
+\left( 1 + \sum_{b=1}^B \mathbb{I}_{[|T_b^\star| \geq |T|]}
+\right)\)</span>.</li>
 </ul>
 <p>If the statistic <span class="math inline">\(T\)</span> is not too
 extreme (the form of <span class="math inline">\(H_1\)</span> decides
@@ -874,7 +877,7 @@ statistics <span class="math inline">\(T_b^\star =
 \sqrt{N}(\bar{X}_b^\star - \bar{X}_N)/s^\star\)</span>, the bootstrap
 p-value is <span class="math display">\[
 \widehat{\text{p-val}} = \frac{1}{B+1} \left( 1 + \sum_{b=1}^B
-I(T_b^\star \geq T) \right).
+\mathbb{I}_{[T_b^\star \geq T]} \right).
 \]</span></li>
 </ul>
 <pre class="r"><code>set.seed(517)
@@ -908,7 +911,7 @@ alternative.</p>
 <li><span class="math inline">\(H_1: \mu \neq \mu_0\)</span>. Taking the
 same studentized statistics, the bootstrap p-value is this time <span class="math display">\[
 \widehat{\text{p-val}} = \frac{1}{B+1} \left( 1 + \sum_{b=1}^B
-I(|T_b^\star| \geq |T|) \right).
+\mathbb{I}_{[|T_b^\star| \geq |T|]} \right).
 \]</span></li>
 </ul>
 <pre class="r"><code>set.seed(517)
@@ -975,7 +978,7 @@ resample <span class="math inline">\(\mathcal{X}_b^\star\)</span></li>
 </ul></li>
 <li>estimate the p-value of the test by <span class="math display">\[
 \widehat{\text{p-val}} = \frac{1}{B+1}\left( 1 + \sum_{b=1}^B
-I(T_b^\star \geq T) \right)
+\mathbb{I}_{[T_b^\star \geq T]} \right)
 \]</span></li>
 </ul>
 </div>
@@ -1031,17 +1034,17 @@ up to the order <span class="math inline">\(N^{-2}\)</span> for <span class="mat
 \mathbb{E}\widehat{b}^{\star\star} = \frac{(N-1) \tau}{N^2} +
 \frac{(N-1) \tau}{N^3} = \frac{\tau}{N}\left[ 1 - \frac{1}{N} +
 \frac{1}{N} - \frac{1}{N^2} \right] = b [1 + N^{-2}]
-\]</span></p>
+\]</span> <span style="float:right"><span class="math inline">\(\Delta\)</span></span></p>
 <p>The example above is again a toy example where bootstrap calculations
 can be performed analytically. But similar improvements can be observed
 even when analytic calculations are not possible. In that case, we need
 to apply a second-iteration bootstrap to every first-iteration bootstrap
 sample, i.e. generating <span class="math inline">\(\mathcal{X}_{b,m}^{\star\star}\)</span> for <span class="math inline">\(m=1,\ldots,M\)</span>, for every <span class="math inline">\(\mathcal{X}_{b}^{\star}\)</span> where <span class="math inline">\(b=1,\ldots,B\)</span>. This is of course
 computationally demanding. Thus while we could, in principle, iterate
-this idea to a three-iteration bootstrap an beyond, this would not be
+this idea to a third-iteration bootstrap an beyond, this would not be
 computationally feasible, and also the finite sample properties of the
 iterated bootstrap estimates may not show the improvements unless <span class="math inline">\(N\)</span> is very large. On the other hand, the
-iterated bootstrap can useful in many cases from the methodological
+iterated bootstrap can be useful in many cases from the methodological
 viewpoint.</p>
 <p><a name="test_var_ex"></a> <strong>Example:</strong> Let <span class="math inline">\(X_1,\ldots,X_p \in \mathbb{R}^p\)</span> be i.i.d.
 from a distribution depending on <span class="math inline">\(\theta \in
@@ -1114,7 +1117,7 @@ T_b^\star &amp;= \sqrt{N} \left( \widehat{\Sigma}_b^{\star\star}
 \widehat{\text{p-val}} &amp;= \frac{1}{1+B} \left( 1 + \sum_{b=1}^B
 I\big(\| T^\star_b \| \geq \| T \|^2\big) \right), \\
 \end{align}
-\]</span></p>
+\]</span> <span style="float:right"><span class="math inline">\(\Delta\)</span></span></p>
 </div>
 <div id="jackknife" class="section level2">
 <h2>Jackknife</h2>

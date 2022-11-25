@@ -324,6 +324,44 @@ There are several ways how to do CV for PCA properly:
     CV(r) = \sum_{k=1}^K \frac{1}{|J_k|} \sum_{(n,j) \in J_k} \Big( x_{n,j} - \widehat{x}_{n,j} \Big)^2.
     \]
     
-3. Modify the KDE approach.
+3. Modify the KDE approach:
 
-4. Use matrix completion, a.k.a. PCA with missing data (beyond the scope of this course).
+    The KDE approach can be read as follows:
+    \[
+    MISE(\widehat{f}_h) = \underbrace{\E \int \big( \widehat{f}_h(x) - f(x) \big)^2 d x}_{\E \| \widehat{f}_h - f \|_2^2} =     \underbrace{\E \int \big[ \widehat{f}_h(x) \big]^2 d x}_{\E \| \widehat{f}_h\|_2^2} - 2 \underbrace{\E \int \widehat{f}_h(x)     f(x) d x}_{\E \langle \widehat{f}_h, f \rangle} + \underbrace{\int \big[ f(x) \big]^2}_{\| f \|_2^2} d x.
+    \]
+    In case of covariance estimation, we are interested in minimizing
+    \[
+    \E \| \widehat{C}_R - C \|_2^2 = \E \| \widehat{C}_R \| - 2 \E \langle \widehat{C}_R, C \rangle + \| C \|_2^2
+    \]
+    over $R$, where $\widehat{C}_R$ is the estimator truncated to have rank $R$, i.e. truncated to the first $R$ principal components.
+    
+    Again, similarly to what we did in KDE, we notice that (assuming for simplicity that the mean is zero)
+    \[
+    \E \langle \widehat{C}_R^{(-n)}, X_n X_n^\top \rangle = \langle \underbrace{\E \widehat{C}_R^{(-n)}}_{\approx \E \widehat{C}_R}, \underbrace{\E X_n X_n^\top}_{ = C} \rangle \approx \E \langle \widehat{C}_R , X_n X_n^\top \rangle
+    \]
+    
+    So, unlike in the KDE case, since the truncated covariance estimator is not linear, we do not have equality above, but the "approximately" sign. But it is still a valid strategy to choose the rank to minimize the approximate CV criterion. Also, when the mean is not zero, there are more approximations.
+
+4. Matrix Completion, a.k.a. PCA with missing data (beyond the scope of this course).
+
+    It is entirely possible to do PCA with missing data assuming only a finite rank of the matrix, and not any probabilistic model. Assume that $\Omega \in \{ 0,1 \}^{N \times p}$ is a bivariate index set providing information about which entries of $X \in \R^{N \times p}$ are considered observed (in the current step of cross-validation). The following optimization problem
+    \[
+    \mathrm{arg \, min}_{\mathbf{M}=(M_{ij})_{i,j=1}^{N \times p}} \sum_{(i,j) \in \Omega} (X_{ij} - M_{ij})^2 \quad \mathrm{s.t.} \quad \mathrm{rank}(\mathbf M)=R
+    \]
+    provides the best rank-$R$ least squares fit to the partially observed data matrix. While the optimization problem is NP-hard, a local optimum can be obtained via the following *iterative hard-thresholding* algorithm:
+    
+    Start from some $\mathbf{M}^{(0)}$ (here we have the luxury of choosing $\mathbf M = \mathbf X$, i.e. as the fully observed matrix) and for $l=1,2,\ldots$ iterate the following steps until convergence:
+      * calculate $\widetilde{\mathbf M}$ to be the rank-$R$ projection of $\mathbf{M}^{(l)}$, that is
+        - let $\mathbf{M}^{(l)} = UDV^\top$ be the SVD of $\mathbf{M}^{(l)}$
+        - let $\widetilde{D} = \mathrm{diag}(\widetilde{d})$, where $\widetilde{d} \in \R^{\mathrm{min}(N,p)}$ is equal to $D_{ii}$ for $i \leq R$ and 0 othervise
+        - set $\widetilde{\mathbf M} = U\widetilde{D}V^\top$
+      * set
+      \[
+      \mathbf{M}^{(l)} = \begin{cases} X_{ij} \quad \text{for } (i,j) \in \Omega \\
+                                       \widetilde{M}_{i,j} \quad \text{for } (i,j) \notin \Omega \end{cases}
+      \]
+
+    The algorithm above will provide us with a fitted entries $X_{ij}$ for $(i,j) \notin \Omega$ for a given rank $R$. These fitted entries can again be compared to the entries actually observed, and $R$ leading to the smallest error is chosen.
+
+

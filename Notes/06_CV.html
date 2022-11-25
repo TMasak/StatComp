@@ -961,9 +961,79 @@ calculate <span class="math display">\[
 CV(r) = \sum_{k=1}^K \frac{1}{|J_k|} \sum_{(n,j) \in J_k} \Big( x_{n,j}
 - \widehat{x}_{n,j} \Big)^2.
 \]</span></p></li>
-<li><p>Modify the KDE approach.</p></li>
-<li><p>Use matrix completion, a.k.a. PCA with missing data (beyond the
-scope of this course).</p></li>
+<li><p>Modify the KDE approach:</p>
+<p>The KDE approach can be read as follows: <span class="math display">\[
+MISE(\widehat{f}_h) = \underbrace{\mathbb{E}\int \big( \widehat{f}_h(x)
+- f(x) \big)^2 d x}_{\mathbb{E}\| \widehat{f}_h - f \|_2^2}
+=     \underbrace{\mathbb{E}\int \big[ \widehat{f}_h(x) \big]^2 d
+x}_{\mathbb{E}\| \widehat{f}_h\|_2^2} - 2 \underbrace{\mathbb{E}\int
+\widehat{f}_h(x)     f(x) d x}_{\mathbb{E}\langle \widehat{f}_h, f
+\rangle} + \underbrace{\int \big[ f(x) \big]^2}_{\| f \|_2^2} d x.
+\]</span> In case of covariance estimation, we are interested in
+minimizing <span class="math display">\[
+\mathbb{E}\| \widehat{C}_R - C \|_2^2 = \mathbb{E}\| \widehat{C}_R \| -
+2 \mathbb{E}\langle \widehat{C}_R, C \rangle + \| C \|_2^2
+\]</span> over <span class="math inline">\(R\)</span>, where <span class="math inline">\(\widehat{C}_R\)</span> is the estimator truncated
+to have rank <span class="math inline">\(R\)</span>, i.e. truncated to
+the first <span class="math inline">\(R\)</span> principal
+components.</p>
+<p>Again, similarly to what we did in KDE, we notice that (assuming for
+simplicity that the mean is zero) <span class="math display">\[
+\mathbb{E}\langle \widehat{C}_R^{(-n)}, X_n X_n^\top \rangle = \langle
+\underbrace{\mathbb{E}\widehat{C}_R^{(-n)}}_{\approx
+\mathbb{E}\widehat{C}_R}, \underbrace{\mathbb{E}X_n X_n^\top}_{ = C}
+\rangle \approx \mathbb{E}\langle \widehat{C}_R , X_n X_n^\top \rangle
+\]</span></p>
+<p>So, unlike in the KDE case, since the truncated covariance estimator
+is not linear, we do not have equality above, but the “approximately”
+sign. But it is still a valid strategy to choose the rank to minimize
+the approximate CV criterion. Also, when the mean is not zero, there are
+more approximations.</p></li>
+<li><p>Matrix Completion, a.k.a. PCA with missing data (beyond the scope
+of this course).</p>
+<p>It is entirely possible to do PCA with missing data assuming only a
+finite rank of the matrix, and not any probabilistic model. Assume that
+<span class="math inline">\(\Omega \in \{ 0,1 \}^{N \times p}\)</span>
+is a bivariate index set providing information about which entries of
+<span class="math inline">\(X \in \mathbb{R}^{N \times p}\)</span> are
+considered observed (in the current step of cross-validation). The
+following optimization problem <span class="math display">\[
+\mathrm{arg \, min}_{\mathbf{M}=(M_{ij})_{i,j=1}^{N \times p}}
+\sum_{(i,j) \in \Omega} (X_{ij} - M_{ij})^2 \quad \mathrm{s.t.} \quad
+\mathrm{rank}(\mathbf M)=R
+\]</span> provides the best rank-<span class="math inline">\(R\)</span>
+least squares fit to the partially observed data matrix. While the
+optimization problem is NP-hard, a local optimum can be obtained via the
+following <em>iterative hard-thresholding</em> algorithm:</p>
+<p>Start from some <span class="math inline">\(\mathbf{M}^{(0)}\)</span>
+(here we have the luxury of choosing <span class="math inline">\(\mathbf
+M = \mathbf X\)</span>, i.e. as the fully observed matrix) and for <span class="math inline">\(l=1,2,\ldots\)</span> iterate the following steps
+until convergence:</p>
+<ul>
+<li>calculate <span class="math inline">\(\widetilde{\mathbf M}\)</span>
+to be the rank-<span class="math inline">\(R\)</span> projection of
+<span class="math inline">\(\mathbf{M}^{(l)}\)</span>, that is
+<ul>
+<li>let <span class="math inline">\(\mathbf{M}^{(l)} = UDV^\top\)</span>
+be the SVD of <span class="math inline">\(\mathbf{M}^{(l)}\)</span></li>
+<li>let <span class="math inline">\(\widetilde{D} =
+\mathrm{diag}(\widetilde{d})\)</span>, where <span class="math inline">\(\widetilde{d} \in
+\mathbb{R}^{\mathrm{min}(N,p)}\)</span> is equal to <span class="math inline">\(D_{ii}\)</span> for <span class="math inline">\(i
+\leq R\)</span> and 0 othervise</li>
+<li>set <span class="math inline">\(\widetilde{\mathbf M} =
+U\widetilde{D}V^\top\)</span></li>
+</ul></li>
+<li>set <span class="math display">\[
+   \mathbf{M}^{(l)} = \begin{cases} X_{ij} \quad \text{for } (i,j) \in
+\Omega \\
+                               \widetilde{M}_{i,j} \quad \text{for }
+(i,j) \notin \Omega \end{cases}
+   \]</span></li>
+</ul>
+<p>The algorithm above will provide us with a fitted entries <span class="math inline">\(X_{ij}\)</span> for <span class="math inline">\((i,j) \notin \Omega\)</span> for a given rank
+<span class="math inline">\(R\)</span>. These fitted entries can again
+be compared to the entries actually observed, and <span class="math inline">\(R\)</span> leading to the smallest error is
+chosen.</p></li>
 </ol>
 </div>
 
