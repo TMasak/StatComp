@@ -156,7 +156,7 @@ I.e. the coverage of the asymptotic CI is exact up to $\mathcal{O}(N^{-1/2})$.
 3. **Bootstrap CI.** From Edgeworth expansions
 \[
 \begin{split}
-P_{\widehat{F}_N}(T \leq x) - P_F(T^\star \leq x) = \mathcal{O}\left( \frac{1}{N} \right)\qquad\qquad\qquad \\
+P_F(T \leq x) - P_{\widehat{F}_N}(T^\star \leq x) = \mathcal{O}\left( \frac{1}{N} \right)\qquad\qquad\qquad \\
 \Rightarrow \quad P\Big(\theta \leq \underbrace{\bar{X}_N + \frac{\widehat{\sigma}}{\sqrt{N}} q^\star(\alpha)}_{= \widehat{\theta}^\star(\alpha)} \Big) = \alpha + \mathcal{O}\left( \frac{1}{N} \right),
 \end{split}
 \]
