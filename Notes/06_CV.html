@@ -381,6 +381,7 @@ Shortcut for Linear Smoothers</a></li>
 KDE</a></li>
 <li><a href="#no.-of-component-selection-for-pca" id="toc-no.-of-component-selection-for-pca">No. of Component Selection
 for PCA</a></li>
+<li><a href="#assignment" id="toc-assignment">Assignment</a></li>
 </ul>
 </div>
 
@@ -885,8 +886,9 @@ of <span class="math inline">\(\mu\)</span> and <span class="math inline">\(\Sig
 \mathcal{N}(\mu,\Sigma)\)</span> split into <span class="math inline">\(X = (X_1,X_2)^\top\)</span> and <span class="math inline">\(\mu=(\mu_1,\mu_2)^\top\)</span> and <span class="math inline">\(\Sigma = \big(\Sigma_{ij}\big)_{i,j=1}^2 \in
 \mathbb{R}^{p \times p}\)</span>, the conditional expectation of <span class="math inline">\(X_1\)</span> given <span class="math inline">\(X_2\)</span> is given by <span class="math display">\[
 \mathbb{E}_{\mu,\Sigma}\big[ X_1 \big| X_2=\mathbf x_2\big] = \mu_1 +
-\Sigma_{12} \Sigma_{22}^{-1} (\mathbf x_2-\mu_2)
-\]</span></li>
+\Sigma_{12} \Sigma_{22}^{\dagger} (\mathbf x_2-\mu_2),
+\]</span> where <span class="math inline">\(\Sigma_{22}^{\dagger}\)</span> denotes the <a href="https://en.wikipedia.org/wiki/Moore%E2%80%93Penrose_inverse">pseudoinverse</a>
+of <span class="math inline">\(\Sigma_{22}\)</span>.</li>
 <li>plug in the estimators of <span class="math inline">\(\mu\)</span>
 and <span class="math inline">\(\Sigma\)</span> in the previous formula
 to obtain <span class="math inline">\(\widehat{\mathbf{x}}_{miss}\)</span></li>
@@ -924,9 +926,9 @@ the following:</p>
 <ul>
 <li>Estimate the mean <span class="math inline">\(\mu\)</span> and the
 covariance <span class="math inline">\(\Sigma\)</span> using only
-entries <span class="math inline">\(x_{n,j}\)</span> such that <span class="math inline">\((n,j) \notin J_k\)</span>. Denote the estimates
-<span class="math inline">\(\widehat{\mu}\)</span> and <span class="math inline">\(\widehat{\Sigma}\)</span>. We will learn how to
-perform this step next time.</li>
+entries <span class="math inline">\(x_{n,j}\)</span> such that <span class="math inline">\((n,j) \notin J_k\)</span>. This can be done using
+the EM algorithm, which we will learn about next week. Denote the
+estimates <span class="math inline">\(\widehat{\mu}\)</span> and <span class="math inline">\(\widehat{\Sigma}\)</span>.</li>
 <li>Perform spectral truncation to have <span class="math inline">\(\widehat{\Sigma}\)</span> of rank <span class="math inline">\(r\)</span>. That is, calculate the
 eigendecomposition <span class="math inline">\(\widehat{\Sigma} = U
 \Lambda U^\top\)</span> with <span class="math inline">\(\Lambda =
@@ -944,17 +946,21 @@ observed entries in that row, i.e. <span class="math inline">\(\widehat{\mathbf
 that <span class="math display">\[
 \mathbf{x}^{(n)} = \begin{pmatrix}\mathbf{x}^{(n)}_{miss} \\
 \mathbf{x}^{(n)}_{obs} \end{pmatrix},
-\qquad \mu = \begin{pmatrix}\mu_{miss}  \\ \mu_{obs} \end{pmatrix},
-\qquad
-\Sigma = \begin{pmatrix} \Sigma_{miss} &amp; \Sigma_{12} \\ \Sigma_{12}
-&amp; \Sigma_{obs} \end{pmatrix}
+\qquad \widehat \mu = \begin{pmatrix}\widehat \mu_{miss}  \\ \widehat
+\mu_{obs} \end{pmatrix}, \qquad
+\widehat \Sigma = \begin{pmatrix} \widehat \Sigma_{miss} &amp; \widehat
+\Sigma_{12} \\ \widehat \Sigma_{12} &amp; \widehat \Sigma_{obs}
+\end{pmatrix}
 \]</span> i.e. assuming that all the unobserved entries come before all
 the observed entries (which can be achieved by permuting the columns and
 permuting accordingly <span class="math inline">\(\mu\)</span> and <span class="math inline">\(\Sigma\)</span> and their estimates), the
 predictions are given by <span class="math display">\[
-\widehat{\mathbf{x}}^{(n)}_{miss} := \mu_{miss} + \Sigma_{12}
-\Sigma_{obs}^{-1} (\mathbf{x}^{(n)}_{obs} - \widehat{\mu}_{obs}).
-\]</span></li>
+\widehat{\mathbf{x}}^{(n)}_{miss} := \widehat \mu_{miss} + \widehat
+\Sigma_{12} \widehat \Sigma_{obs}^{\dagger} (\mathbf{x}^{(n)}_{obs} -
+\widehat{\mu}_{obs}),
+\]</span> where <span class="math inline">\(\widehat
+\Sigma_{obs}^{\dagger}\)</span> denotes the <a href="https://en.wikipedia.org/wiki/Moore%E2%80%93Penrose_inverse">pseudoinverse</a>
+of <span class="math inline">\(\widehat \Sigma_{obs}\)</span>.</li>
 </ul>
 <p>Finally, compare the predictions with the observations. That is,
 calculate <span class="math display">\[
@@ -1035,6 +1041,24 @@ U\widetilde{D}V^\top\)</span></li>
 be compared to the entries actually observed, and <span class="math inline">\(R\)</span> leading to the smallest error is
 chosen.</p></li>
 </ol>
+</div>
+<div id="assignment" class="section level1">
+<h1>Assignment</h1>
+<p>CV for degree of polynomial in linear regression, like in 5.3.2 of
+Hastie Tibshirani (2014)</p>
+<p>Write (prediction-based) K-fold (with <span class="math inline">\(K=10\)</span>) CV for variable selection
+(comparing linear regressions with different number of predictors) and
+show that while CV does a good job with respect to prediction, it tends
+to include too many variables and hence it is not selection consistent.
+Design a simulation study to demonstrate this fact.</p>
+<p>Bandwidth selection for local linear regression via K-fold CV - own
+implementation compared to what is in R.</p>
+<p>Compare K-fold and leave-one-out CV schemes for something
+specific.</p>
+<p>Project: CV for PCA, compare via simulations option 1,2,3 above and
+also matrix completion option.</p>
+<p>Project: One of the notes above: which linear smoothers are amendable
+to computational savings?</p>
 </div>
 
 

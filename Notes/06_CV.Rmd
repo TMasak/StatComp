@@ -284,8 +284,9 @@ There are several ways how to do CV for PCA properly:
     * predict the missing part from the observed part using the estimators of $\mu$ and $\Sigma$
       - For $X\sim \mathcal{N}(\mu,\Sigma)$ split into $X = (X_1,X_2)^\top$ and $\mu=(\mu_1,\mu_2)^\top$ and $\Sigma = \big(\Sigma_{ij}\big)_{i,j=1}^2 \in \R^{p \times p}$, the conditional expectation of $X_1$ given $X_2$ is given by
       \[
-      \E_{\mu,\Sigma}\big[ X_1 \big| X_2=\mathbf x_2\big] = \mu_1 + \Sigma_{12} \Sigma_{22}^{-1} (\mathbf x_2-\mu_2)
+      \E_{\mu,\Sigma}\big[ X_1 \big| X_2=\mathbf x_2\big] = \mu_1 + \Sigma_{12} \Sigma_{22}^{\dagger} (\mathbf x_2-\mu_2),
       \]
+      where $\Sigma_{22}^{\dagger}$ denotes the [pseudoinverse](https://en.wikipedia.org/wiki/Moore%E2%80%93Penrose_inverse) of $\Sigma_{22}$.
       - plug in the estimators of $\mu$ and $\Sigma$ in the previous formula to obtain $\widehat{\mathbf{x}}_{miss}$
     * Define
     \[
@@ -306,18 +307,19 @@ There are several ways how to do CV for PCA properly:
     \]
     randomly into $K$ folds, denoted $J_1,\ldots,J_K$, and for every single fold $J_k$ we perform the following:
     
-    * Estimate the mean $\mu$ and the covariance $\Sigma$ using only entries $x_{n,j}$ such that $(n,j) \notin J_k$. Denote the estimates $\widehat{\mu}$ and $\widehat{\Sigma}$. We will learn how to perform this step next time.
+    * Estimate the mean $\mu$ and the covariance $\Sigma$ using only entries $x_{n,j}$ such that $(n,j) \notin J_k$. This can be done using the EM algorithm, which we will learn about next week. Denote the estimates $\widehat{\mu}$ and $\widehat{\Sigma}$.
     * Perform spectral truncation to have $\widehat{\Sigma}$ of rank $r$. That is, calculate the eigendecomposition $\widehat{\Sigma} = U \Lambda U^\top$ with $\Lambda = \mathrm{diag}(\lambda_1,\ldots,\lambda_p)$, set $\widetilde{\Lambda} := \mathrm{diag}(\lambda_1,\ldots,\lambda_r,0,\ldots,0)$, and update $\widehat{\Sigma} := U \widetilde{\Lambda} U^\top$
     * Predict entries $x_{n,j}$ such that $(n,j) \in J_k$ as the conditional expectation of the unobserved entries in every row given the observed entries in that row, i.e. $\widehat{\mathbf{x}}^{(n)}_{miss} := \E_{\widehat{\mu}, \widehat{\Sigma}}\big[ \mathbf{x}^{(n)}_{miss} \big| \mathbf{x}^{(n)}_{obs} \big]$ for $n=1,\ldots,N$. Assuming w.l.o.g. that
     \[
     \mathbf{x}^{(n)} = \begin{pmatrix}\mathbf{x}^{(n)}_{miss} \\ \mathbf{x}^{(n)}_{obs} \end{pmatrix},
-    \qquad \mu = \begin{pmatrix}\mu_{miss}  \\ \mu_{obs} \end{pmatrix}, \qquad
-    \Sigma = \begin{pmatrix} \Sigma_{miss} & \Sigma_{12} \\ \Sigma_{12} & \Sigma_{obs} \end{pmatrix}
+    \qquad \widehat \mu = \begin{pmatrix}\widehat \mu_{miss}  \\ \widehat \mu_{obs} \end{pmatrix}, \qquad
+    \widehat \Sigma = \begin{pmatrix} \widehat \Sigma_{miss} & \widehat \Sigma_{12} \\ \widehat \Sigma_{12} & \widehat \Sigma_{obs} \end{pmatrix}
     \]
     i.e. assuming that all the unobserved entries come before all the observed entries (which can be achieved by permuting the columns and permuting accordingly $\mu$ and $\Sigma$ and their estimates), the predictions are given by
     \[
-    \widehat{\mathbf{x}}^{(n)}_{miss} := \mu_{miss} + \Sigma_{12} \Sigma_{obs}^{-1} (\mathbf{x}^{(n)}_{obs} - \widehat{\mu}_{obs}).
+    \widehat{\mathbf{x}}^{(n)}_{miss} := \widehat \mu_{miss} + \widehat \Sigma_{12} \widehat \Sigma_{obs}^{\dagger} (\mathbf{x}^{(n)}_{obs} - \widehat{\mu}_{obs}),
     \]
+    where $\widehat \Sigma_{obs}^{\dagger}$ denotes the [pseudoinverse](https://en.wikipedia.org/wiki/Moore%E2%80%93Penrose_inverse) of $\widehat \Sigma_{obs}$.
     
     Finally, compare the predictions with the observations. That is, calculate
     \[
@@ -364,4 +366,16 @@ There are several ways how to do CV for PCA properly:
 
     The algorithm above will provide us with a fitted entries $X_{ij}$ for $(i,j) \notin \Omega$ for a given rank $R$. These fitted entries can again be compared to the entries actually observed, and $R$ leading to the smallest error is chosen.
 
+# Assignment
 
+CV for degree of polynomial in linear regression, like in 5.3.2 of Hastie Tibshirani (2014)
+
+Write (prediction-based) K-fold (with $K=10$) CV for variable selection (comparing linear regressions with different number of predictors) and show that while CV does a good job with respect to prediction, it tends to include too many variables and hence it is not selection consistent. Design a simulation study to demonstrate this fact.
+
+Bandwidth selection for local linear regression via K-fold CV - own implementation compared to what is in R.
+
+Compare K-fold and leave-one-out CV schemes for something specific.
+
+Project: CV for PCA, compare via simulations option 1,2,3 above and also matrix completion option.
+
+Project: One of the notes above: which linear smoothers are amendable to computational savings?
