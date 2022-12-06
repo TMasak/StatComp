@@ -1,0 +1,14 @@
+#!/bin/bash -l
+
+#SBATCH --nodes 1-1
+#SBATCH --cpus-per-task 35
+#SBATCH --mem 120G
+#SBATCH --time 5:59:00
+
+#SBATCH -o /home/<name>/R/myjob.%j.%N.out
+#SBATCH -D /home/<name>/R/
+
+module purge 
+module load gcc
+module load r
+srun R CMD BATCH ./12_R_script.R

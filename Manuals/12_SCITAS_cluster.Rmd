@@ -1,0 +1,109 @@
+---
+title: "Running Jobs on SCITAS"
+output:
+  html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+[SCITAS](https://www.epfl.ch/research/facilities/scitas/) offers several (computer/computational) clusters that EPFL employees and students can use for high performance computing. A cluster is a set of computers that can communicate together and can be seen as a single system. A cluster consists of multiple nodes, which can be thought of as a single PC (used as a server). Unlike typical PCs, nodes typically have couple of dozens of cores, that can be used for computing purposes. Since the memory is shared between all cores on a single node, only one user can typically access a node at a time. For this reason, there needs to be a queuing system that allocates computational resources to the users. The one SCITAS uses is called SLURM. A user needs to tell SLURM how much resources (mostly the no. of nodes and a period of time) he needs.
+
+In statistics, clusters are useful mostly to run Monte Carlo experiments, which are very easy to be parallelized. Take a simulation study for example: one needs to run the same statistical procedure (or a set of procedures for comparison purposes) multiple times for many different seeds. Parallelizing over the seeds is quite simple.
+
+## Accessing a Cluster
+
+I am currently using the Helvetios cluster, here I describe how to connect to it remotely from a Windows machine. If you are outside of the EPFL network, you need to use a VPN. Otherwise, one needs two things: an SSH client and a file manager.
+
+*Note*: A prerequisite, however, is a possession of a SCITAS account (if you have it, the name and password are you GASPAR credentials). If you do not have the account, you can apply for it (under certain conditions) on the SCITAS website. From now on, I will assume the reader has a free SCITAS account.
+
+On Windows, there is no native SSH client, so let us download [PuTTY](https://www.putty.org/). For a file manager, we will use [WinSCP](https://winscp.net/eng/index.php). Install both.
+
+Open WinSCP and `CTRL+N`. A login pop-up will appear, choose `New Site` on the left. As a host name, type in `helvetios` (or `helvetios.epfl.ch`, if just `helvetios` does not work) and the user name and password are your Gaspar credentials. You can save the credentials for next time. After logging it, you should see your local files on the left and your remote home folder on the right (this would be `/home/<name>`).
+
+Similarly, open PuTTY and provide the same host name. On the left tab, go to `SSH -> X11` and check `Enable X11 forwarding`. Return to the session tab in top-left and save you credentials. Click open, and insert your GASPAR credentials. You should now be logged onto the cluster, seeing your usage statistics.
+
+## Playing around
+
+The WinSCP account manager is quite self-explanatory, but what can you do with the SSH client?
+
+SSH is the way to communicate with the cluster. Type in
+
+* `squeue` to see all running jobs
+* `squeue --users=<name>` to see your running jobs (there should be nothing at this point)
+
+Software is organized in modules on the linux cluster. If you want to run `R`, for example, you first need to load some modules. This is how to run R interactively on the cluster:
+
+* `module purge` to clear the modules
+* `module spider r` to see which modules need to be loaded before accessing `R`, which is actually named with a lower-case letter
+* `module load gcc` ... at the time of writing, this is the only module that needs to be loaded
+* `module load r` to load `R`
+* `R` to run R ... for some reason this needs to be an upper-case letter
+* now you are running R (console) on the cluster, you can try it out and then type `q()` (and after that `y` to confirm) to quit
+  - if you need to install some packages, do it like this, interactively
+  
+If you would have some jobs running already, you could type `ssh <node-name>`, where the node name is the one you see on the right end of the line when calling `squeue --users=<name>`. After logging in, you can type in `htop` to see how you are actually utilizing your node (e.g. whether your code is actually running in parallel).
+
+## Running a Job
+
+The most common way of running calculation on a cluster requires two scripts
+
+1. a job script (see `12_job_script.txt` for an example) that provides the SLURM commands
+2. an `R` script (see `12_R_script.R`) that actually specifies the calculations to be done (and output to be saved)
+
+having the two scripts prepared, one can simply run e.g. `sbatch 12_job_script.txt` in PuTTY by which the cluster is told to run the file `12_job_script.txt`, which in turn
+
+* specifies parameters for the job
+* opens an `R` session
+* provides `12_R_script.R` to be executed from within the `R` session
+
+## Exaple
+
+Let's take a closer look at the job script `12_job_script.txt` and the `R` script `12_R_script.R`.
+
+Firstly, in the job script:
+
+* `#SBATCH --nodes 1-1` specifies we require one node (SCITAS only allows multi-node jobs to be run after a special permission)
+* `#SBATCH --cpus-per-task 35` specifies we will use 35 cores of the node
+    - on Helvetios, all parallel nodes have 35 cores. Provided that we ask for more than 10 cores and provided that our code actually utilizes more than 10 cores, our job will be automatically run on a parallel node. Otherwise it will be directed to a serial node.
+* `#SBATCH --mem 120G` specifies we require 120 GB of memory on the node
+    - in the contemporary Helvetios configuration, this is probably not necessary to specify, since nodes cannot be shared by multipli users
+* `#SBATCH --time 5:59:00` specifies we require almost 6 hours of wallclock time
+    - for free accounts, 6 hours is the maximum; for a premium account, 24 hours would be the maximum
+* `#SBATCH -o /home/<name>/R/myjob.%j.%N.out` specifies the SLURM output file
+    - don't forget to place your `<name>` here
+    - delete the `R` if you use folder of a different name in your home folder
+    - this is useful to debug errors in your batch commands, otherwise it is useless because the `R` script will have its own output file of the same name once run
+* `#SBATCH -D /home/<name>/R/` specifies the home folder
+    - don't forget to place your `<name>` here
+    - delete the `R` if you use folder of a different name in your home folder
+* the rest of the job script just loads the `R` module and runs the `R` script in `R`
+
+Secondly, the `R` script:
+
+```{r,echo=T,eval=F}
+my_sim <- function(seed,verbose=F){
+  set.seed(517*seed)
+  ### calculation of whatever we want: here timing matrix-matrix multiplication
+  K <- 10^3
+  A <- array(runif(K^2),c(K,K))
+  B <- array(runif(K^2),c(K,K))
+  t <- Sys.time()
+  Res <- A %*% B
+  t <- Sys.time()-t
+  return(t)
+}
+
+library(parallel)
+Res <- mclapply(1:35,my_sim,mc.cores=35)
+# data <- lapply(1:25,simulate) # comment the previous line an uncomment this one if not running on a cluster
+save(Res, file="1_james.RData")
+```
+
+is quite self-explanatory. A couple of notes:
+
+* the library parallel allows a parallel version of `lapply` called `mclapply`
+    - if you want to parallelize e.g. a for-loop, the simplest way to do it is to rewrite the for-loop as a function, call it on the indices with `lapply`, and then just replace `lapply` for `mclapply` with the additional argument `mc.cores`
+    - in a for-loop, you would probably save your results into an array, but `lapply` or `mclapply` will return individual function returns like a list. Save your results like a list or transform it to an array before saving it.
+* the function `my_sim` is just a toy function that returns time of matrix-matrix multiplication
