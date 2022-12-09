@@ -355,6 +355,8 @@ J Albert (2007) Bayesian Computations with R
 
 C Robert \& G Casella (2010) Introducing Monte Carlo Methods with R
 
+K Murphy (2012) Machine Learning: a Probabilistic Perspective
+
 ##
 
 Few things to mention if we have time at the end of this final lecture:
