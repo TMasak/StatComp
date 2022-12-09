@@ -330,17 +330,17 @@ Metropolis-Hastings (MH) algorithm:
 
 ## MH with a Symmetric Proposal
 
-Let $U^{(0)} = \epsilon_0$ and $U^{(t+1)} = X^{(t)} + \epsilon_t$, $t \geq 1$, where $\epsilon_0,\epsilon_1,\ldots$ drawn independently from a symmetric density, leading to $k(x,y) = g(y-x)$.
+Let $U^{(0)} = \epsilon_0$ and $U^{(t+1)} = X^{(t)} + \epsilon_t$, $t \geq 1$, where $\epsilon_0,\epsilon_1,\ldots$ drawn independently a density symmetric around zero.
 
-Verifying detailed balance is easy in this case:
+Verifying detailed balance is relatively simple in this case:
 
-* detailed balance: $k(x,u) f(x) = k(u,x) f(u)$ for $x \stackrel{?}{\leadsto} u$
+* detailed balance: $k(x,u) f(x) = k(u,x) f(u)$ for $x \leadsto u$
 * $k(x,u)$ is given implicitly as the mixture of
   - moving away $x \leadsto u$ with probability $\alpha(x,u) = \min\big(1,f(u)/f(x)\big)$
      - $u$ is drawn from $\varphi_x(u)$ a symmetric density around $x$
      - equal to $\varphi_x(u) \alpha(x,u)$
   - staying at $x$ with probability $1-\alpha(x,u)$
-    - this is symmetric w.r.t. time flow, so we do not have to worry about it
+    - i.e. $x=u$ $\ldots$ detailed balance trivially satisfied 
 * detailed balance: $\cancel{\varphi_x(u)} \alpha(x,u) f(x) = \cancel{\varphi_u(x)}\alpha(u,x) f(u)$
 * this is trivial since for $f(x) \neq f(u)$ it is
   - either $\alpha(u,x) = 1$ and $\alpha(x,u) = f(u)/f(x)$ leading to
