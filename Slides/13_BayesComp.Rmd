@@ -1,0 +1,376 @@
+---
+title: "Week 13: Bayesian Computations"
+subtitle: "MATH-517 Statistical Computation and Visualization"
+author: "Tomas Masak"
+# date: "`r format(Sys.time(), '%b %d, %Y')`"
+date: "December 16th 2022"
+output: beamer_presentation
+classoption: "presentation"
+theme: "Madrid"
+colortheme: "seahorse"
+footer: "Copyright (c) 2022, EPFL"
+urlcolor: blue
+header-includes:
+  - \usepackage{bm}
+  - \usepackage[makeroom]{cancel}
+  - \newcommand{\E}{\mathbb{E}}
+  - \newcommand{\R}{\mathbb{R}}
+  - \newcommand{\argmin}{\mathrm{arg\,min\;}}
+  - \newcommand{\rank}{\mathrm{rank}}
+  - \newcommand\independent{\protect\mathpalette{\protect\independenT}{\perp}}\def\independenT#1#2{\mathrel{\rlap{$#1#2$}\mkern2mu{#1#2}}}
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE, message = FALSE, warning = FALSE)
+```
+
+## Bayes' Rule
+
+Let $X$ be a random variable and $\theta$ a parameter, considered also a random variable:
+\[
+f_{X,\theta}(x, \theta) = \underbrace{f_{X \mid \theta} (x \mid \theta)}_{\mathrm{likelihood}} \underbrace{f_\theta(\theta)}_{\mathrm{prior}} = \underbrace{f_{\theta \mid X} (\theta \mid x)}_{\mathrm{posterior}} f_X(x).
+\]
+
+* likelihood = frequentist model
+* likelihood & prior = Bayesian model
+
+Rewritten:
+\[
+\begin{split}
+f_{\theta \mid X=x_0} (\theta \mid x_0) &\propto f_{X \mid \theta} (x_0 \mid \theta)f_\theta(\theta),\\
+\text{in words:}\quad\qquad\text{posterior} &\propto \text{likelihod} \times \text{prior}
+\end{split}
+\]
+
+* posterior has all the answers, but is often intractable $\Rightarrow$ MCMC
+
+* Metropolis-Hasting: extremely versatile approach to MCMC
+  - but a good proposal (leading to a good acceptance rate) can be hard to find for multidimensional problems
+
+## Gibbs Sampling
+
+**Idea**: decompose the multidimensional distribution into *full conditionals* and draw from those in a cyclic manner
+
+* not as universal as MH, since the calculation of the conditional distributions not always possible
+
+Assuming 
+
+* $\mathcal{X} = \Pi_{i=1}^p \mathcal{X}_i$ (typically $\mathcal{X}_i=\R$ or $\mathcal{X}_i = (0,\infty)$),
+* the target distribution belongs to some vector $X = (X_1,\ldots,X_p)^\top$ (notation),
+
+the Gibbs sampler proceeds as follows from initial $x^{(0)} = (x^{(0)}_1,\ldots, x^{(0)}_p)^\top$:
+
+* **for** $t=1,2,\ldots$
+    - generate $x^{(t)}_1$ from $X_1 \mid X_2 = x_2^{(t-1)}, X_3 = x_3^{(t-1)}, \ldots, X_p = x_p^{(t-1)}$
+    - generate $x^{(t)}_2$ from $X_2 \mid X_1 = x_1^{(t)}, X_3 = x_3^{(t-1)}, \ldots, X_p = x_p^{(t-1)}$
+    - $\ldots$
+    - generate $x^{(t)}_p$ from $X_p \mid X_1 = x_1^{(t)}, X_2 = x_2^{(t)}, \ldots, X_{p-1} = x_{p-1}^{(t-1)}$
+
+## Remarks on Gibbs Sampling
+
+* full conditionals specify the joint distribution
+* it can be shown that the Gibbs sampler above actually samples from this joint distribution even though detailed balance does not hold
+  - this is a fundamental result in random field theory
+* the algorithm above is called *systematic Gibbs sampler*
+  - with random reordering of indices in every step, it becomes the *random Gibbs sampler*
+  - for the random Gibbs sampler, one often updates only a subset of indices in every step
+  - in the special case of updating only one random index in a step, the random Gibbs sampler corresponds to MH (with proposal such that the acceptance prob. is 1) and hence detailed balance holds
+
+## Toy Example
+
+Using the systematic Gibbs sampler, calculate $P(X_1 \geq 0, X_2 \geq 0)$ for
+\[
+X = (X_1,X_2)^\top \sim \mathcal{N}\left( \begin{pmatrix} \mu_1 \\ \mu_2 \end{pmatrix}, \begin{pmatrix} \sigma_1^2 & \sigma_{12} \\ \sigma_{21} & \sigma_2^2 \end{pmatrix} \right).
+\]
+
+Easy, since Gaussian conditionals are Gaussian:
+\[
+X_i \mid X_j=x_j \sim \mathcal{N}\left( \mu_i + \frac{\sigma_{ij}}{\sigma^2_j} (x_j - \mu_j), \sigma_i^2 - \frac{\sigma_{ij}^2}{\sigma_j^2} \right).
+\]
+
+E.g. for $\mu_1 = \mu_2 = 0$, $\sigma_1=\sigma_2=1$ and $\sigma_{12} = 0.5$, we have...
+
+## Toy Example
+
+```{R,echo=T,eval=F, fig.show="hold", out.width="50%"}
+set.seed(123)
+burnin <- 1000
+TT <- 2000
+X1 <- rep(0, burnin+TT)
+X2 <- rep(0, burnin+TT)
+X1[1] <- 0
+X2[1] <- 0
+for(t in 2:(burnin+TT)){
+  X1[t] <- rnorm(1,0+0.3/1*(X2[t-1]-0), sqrt(1-0.3^2/1))
+  X2[t] <- rnorm(1,0+0.3/1*(X1[t]-0), sqrt(1-0.3^2/1))
+}
+X1 <- X1[-(1:burnin)]
+X2 <- X2[-(1:burnin)]
+
+sum(I(X1 >= 0 & X2 >= 0 ))/TT # empirical P(X1 >= 0, X2 >= 0)
+```
+
+## Toy Example
+
+```{R,echo=F, fig.show="hold", out.width="49%"}
+set.seed(123)
+burnin <- 1000
+TT <- 2000
+X1 <- rep(0, burnin+TT)
+X2 <- rep(0, burnin+TT)
+X1[1] <- 0
+X2[1] <- 0
+for(t in 2:(burnin+TT)){
+  X1[t] <- rnorm(1,0+0.3/1*(X2[t-1]-0), sqrt(1-0.3^2/1))
+  X2[t] <- rnorm(1,0+0.3/1*(X1[t]-0), sqrt(1-0.3^2/1))
+}
+X1 <- X1[-(1:burnin)]
+X2 <- X2[-(1:burnin)]
+
+m <- 5
+plot(rep(X1,each=2)[2:(2*m)],rep(X2,each=2)[1:(2*m-1)],type="l",xlim=c(-4,4),ylim=c(-4,4),xlab=expression(X[1]),ylab=expression(X[2])) # first draw the lines
+points(X1[1:m],X2[1:m],pch=16,col=2:6) # then the points
+plot(X1, X2,xlab=expression(X[1]),ylab=expression(X[2]),xlim=c(-4,4),ylim=c(-4,4))
+sum(I(X1 >= 0 & X2 >= 0 ))/TT
+```
+
+## Metropolis-within-Gibbs
+
+What if sampling from full conditionals isn't easy for Gibbs?
+
+* do a single Metropolis-Hastings step instead
+
+What if parameters are naturally grouped in a real application?
+
+* e.g. some parameters correspond to location and others to scale
+* location parameters can usually be sampled at once, conditionally on all the other parameters
+  - *blocked Gibbs sampler*
+  - potentially via an MH step
+
+## Output Analysis
+
+MCMC compared to MC:
+
+* sacrifices independence for more versatility
+  - ergodic theory: independence not really needed in the long run
+* in practice, the question is: what is a long enough run?
+* just inspect the samples drawn (after discarding burnin)
+  - check whether the acceptance rate is reasonable
+  - visualize graphical outputs (trace plots, ACF, etc.)
+  - optionally, calculate some diagnostic statistics
+* in reality, we can never know
+  - silent failure?!
+
+## Simple but Real Example
+
+* the height of college students has $\mathcal{N}(\mu,\sigma^2)$
+  - we work with $\sigma$, i.e. the standard deviation instead of variance
+* only binned data available
+
+\tiny
+```{R,echo=F, message=F, warning=F}
+options(width = 300)
+library(LearnBayes)
+data(studentdata)
+library(tidyverse)
+X <- studentdata %>% mutate(X = cut(Height, breaks=c(-Inf,seq(60,74,by=2),Inf))) %>% select(X)
+(binneddata <- table(X))
+dimnames(binneddata) <- NULL
+d <- list(int.lo=c(-Inf,seq(60,74,by=2)),
+       int.hi=c(seq(60,74,by=2), Inf),
+       f=as.numeric(binneddata))
+groupeddatapost <- function(theta,data){
+  dj = function(f, int.lo, int.hi, mu, sigma){
+    f * log(pnorm(int.hi, mu, sigma) -
+    pnorm(int.lo, mu, sigma))
+  }
+  mu = theta[1]
+  sigma = exp(theta[2])
+  sum(dj(data$f, data$int.lo, data$int.hi, mu, sigma))
+}
+```
+
+\normalsize
+* multinomial data, probabilities depend on $\mu$ and $\sigma$
+  - e.g. prob. of an observation fallin into $(62,64]$ is $\Phi_{\mu, \sigma}(62) - \Phi_{\mu, \sigma}(60)$
+* likelihood:
+\[
+f(d\mid\mu,\sigma) \propto \prod_{j=1}^9 \left[ \Phi_{\mu, \sigma}(a_{j}) - \Phi_{\mu, \sigma}(a_{j-1}) \right]^{b_j} =: L(\mu, \sigma)
+\]
+* prior: $f(\mu,\sigma) = \frac{1}{\sigma}$
+  - improper and uninformative (though the latter is a misnomer)
+  - changing variables $\lambda=\log(\sigma)$ removes $1/\sigma$ from the posterior
+
+Posterior:
+\[
+f(\mu,\sigma \mid D=d) \propto L\big(\mu, \exp(\lambda)\big)
+\]
+
+## Real but Simple Example
+
+* we want to sample from the posterior using random walk MH using the `LearnBayes` library, which uses
+\[
+U^{(t+1)} = X^{(t)} + s Z
+\]
+where $Z \sim \mathcal(0,\Sigma)$ and $s > 0$ is a scale parameter
+  - overparametrization for the sake of convenience (debatable)
+* for MH we have to choose
+  - starting point $(\mu^{(0)},\lambda^{(0)})^\top$
+  - scale $s$
+  - covariace $\Sigma$
+  
+## Real but Simple Example
+
+* Looking at the binned data, why not to take
+  - $(\mu^{(0)},\lambda^{(0)})^\top = (68,1)^\top$
+  - scale $s = 1$ $\Rightarrow$ acceptance too low, so let's take $s = 0.1$
+  - covariace $\Sigma = I_{2 \times 2}$
+
+\footnotesize
+Acceptance rate:
+```{R,out.width="50%",fig.align="center"}
+op <- par(ps=20)
+start <- c(68,1)
+proposal <- list(var=diag(2),scale=0.1) # play with scale manually until good acceptance
+set.seed(517)
+fit <- rwmetrop(groupeddatapost,proposal,start,10000,d) # MH from the LearnBayes library
+fit$accept
+plot(fit$par[,1],fit$par[,2],xlab=expression(mu),ylab=expression(lambda))
+```
+
+## Real but Simple Example
+
+* above starting point chosen badly
+* normally taken care of by burnin, here let's re-run
+  - $(\mu^{(0)},\lambda^{(0)})^\top = (66,1.4)^\top$
+
+```{R,out.width="50%",fig.align="center"}
+op <- par(ps=20)
+start <- c(66,1.4)
+fit <- rwmetrop(groupeddatapost,proposal,start,10000,d) # random walk proposal MH
+fit$accept # still good
+plot(fit$par[,1],fit$par[,2])
+```
+
+## Real but Simple Example - Ouput Check
+
+```{R,out.width="49%", fig.show="hold"}
+op <- par(ps=20)
+plot(fit$par[,1],type="l",main=expression(paste("Trace plot for ",mu)))
+plot(fit$par[,2],type="l",main=expression(paste("Trace plot for ",lambda)))
+acf(fit$par[,1],main=expression(paste("ACF for ",mu))) # not so nice
+acf(fit$par[,2],main=expression(paste("ACF for ",lambda)))
+```
+
+## Real but Simple Example - Ouput Check
+
+* the plots above look good, but values of $\mu$ are correlated for too long
+* their correlation can be reduced by taking $\Sigma$ diagonal with the variance for $\mu$ higher than than for $\lambda$
+* actually, why not to take $\Sigma$ estimated from our previous run
+
+```{R,echo=T}
+var(fit$par)
+```
+
+* acceptance too high with our $s=0.1$ now, let's increase $s$
+  - $s=1$ gives 58%
+  - let's take $s=2$
+  
+## Real but Simple Example - Final Run
+
+Lets analyze the output again.
+
+```{R,echo=F,out.width="40%", fig.show="hold"}
+proposal <- list(var=var(fit$par),scale=1)
+fit <- rwmetrop(groupeddatapost,proposal,start,10000,d) # random walk proposal MH
+fit$accept
+op <- par(ps=25)
+plot(fit$par[,1],type="l",main=expression(paste("Trace plot for ",mu)))
+plot(fit$par[,2],type="l",main=expression(paste("Trace plot for ",lambda)))
+acf(fit$par[,1])
+acf(fit$par[,2])
+```
+
+## Real but Simple Example - Estimated Posterior
+
+\footnotesize
+```{R,echo=T,out.width="30%", fig.show="hold"}
+op <- par(ps=30)
+plot(fit$par[,1],fit$par[,2])
+
+sims <- data.frame(mu = fit$par[,1], lambda = fit$par[,2])
+ggplot(sims, aes(x = mu, y = lambda)) +
+  geom_bin2d()
+
+mycontour(groupeddatapost,c(65.3,67,1.3,1.6),d,xlab="mu",ylab="log sigma")
+points(fit$par[,1],fit$par[,2])
+apply(fit$par,2,mean)
+```
+
+## Final Thoughts
+
+* Bayesianism is a different way of thinking about problems
+  - e.g. hierarchical models
+* prior vs. no prior
+* MLE vs. MAP (or rather posterior mean)
+* sampling not the only way to be Bayesian
+  - *variational* methods (back to optimization)
+  - *empirical* Bayes (back to frequentism)
+* Hamiltonian MC and NUTS 
+  - explore the space as a whole (like in MH) but endorse moving around
+* BUGS \& JAGS
+  - packages for Bayesian computations (JAGS has R interface `rjags``)
+  - uses model structure and Gibbs sampling whenever possible
+* STAN
+  - a package with R interface `rstan`
+  - uses NUTS
+* silent failure!?
+  - multimodal distributions problematic for sampling
+  - plateau regions problematic for optimization
+
+## Final Thoughts
+
+* as sample size $|D|$ grows:
+  - at first, we are going away from the prior, and the posterior is getting complicated
+  - then, the posterior becomes more and more regular (courtesy of CLT) and the prior serves as a bit of regularization
+  - eventually, the prior stops mattering
+    - back to frequentism in the large sample limit $\Rightarrow$ somewhat weak Bayesian theory
+
+\small
+* in every statistical task, there are three sources of error:
+  - data is random (vanishes with increasing data set)
+  - my model is wrong (never goes away)
+  - inference is inexact (vanishes with investing more computational resources)
+
+\small
+\begin{exampleblock}{}
+\emph{Far better an approximate answer to the right question, than the exact answer to the wrong question.}
+
+\hfill -- John W. Tukey
+\end{exampleblock}
+
+## References
+
+J Albert (2007) Bayesian Computations with R
+
+C Robert \& G Casella (2010) Introducing Monte Carlo Methods with R
+
+##
+
+Few things to mention if we have time at the end of this final lecture:
+
+* studentized Bootstrap CI
+
+* final projects
+  - lessons learned
+  - statisticians are plumbers
+  - good work ethics
+
+* feedback
+  - EPFL, new course, first course
+
+* Applied Stats course next semester
+  - follow-up course
+  - workflow established here
+  - project-based (well-defined), methods-oriented
+

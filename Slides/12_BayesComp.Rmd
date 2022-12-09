@@ -1,0 +1,499 @@
+---
+title: "Week 12: Bayesian Computations"
+subtitle: "MATH-517 Statistical Computation and Visualization"
+author: "Tomas Masak"
+# date: "`r format(Sys.time(), '%b %d, %Y')`"
+date: "December 9th 2022"
+output: beamer_presentation
+classoption: "presentation"
+theme: "Madrid"
+colortheme: "seahorse"
+footer: "Copyright (c) 2022, EPFL"
+urlcolor: blue
+header-includes:
+  - \usepackage{bm}
+  - \usepackage[makeroom]{cancel}
+  - \newcommand{\E}{\mathbb{E}}
+  - \newcommand{\R}{\mathbb{R}}
+  - \newcommand{\argmin}{\mathrm{arg\,min\;}}
+  - \newcommand{\rank}{\mathrm{rank}}
+  - \newcommand\independent{\protect\mathpalette{\protect\independenT}{\perp}}\def\independenT#1#2{\mathrel{\rlap{$#1#2$}\mkern2mu{#1#2}}}
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE, message = FALSE, warning = FALSE)
+```
+
+## Bayes' Rule
+
+Let $X$ be a random variable and $\theta$ a parameter, considered also a random variable:
+\[
+f_{X,\theta}(x, \theta) = \underbrace{f_{X \mid \theta} (x \mid \theta)}_{\mathrm{likelihood}} \underbrace{f_\theta(\theta)}_{\mathrm{prior}} = \underbrace{f_{\theta \mid X} (\theta \mid x)}_{\mathrm{posterior}} f_X(x).
+\]
+
+* likelihood = frequentist model
+* likelihood & prior = Bayesian model
+
+Denoting by $x_0$ the observed value of $X$:
+\[
+f_{\theta \mid X=x_0} (\theta \mid x_0) = \frac{f_{X \mid \theta} (x_0 \mid \theta)f_\theta(\theta)}{f_X(x_0)} = \frac{f_{X \mid \theta} (x_0 \mid \theta)f_\theta(\theta)}{\int f_{X \mid \theta} (x_0 \mid \theta)f_\theta(\theta) d \theta},
+\]
+which is the Bayes' rule. Rewritten:
+\[
+\begin{split}
+f_{\theta \mid X=x_0} (\theta \mid x_0) &\propto f_{X \mid \theta} (x_0 \mid \theta)f_\theta(\theta),\\
+\text{in words:}\quad\qquad\text{posterior} &\propto \text{likelihod} \times \text{prior}
+\end{split}
+\]
+$\propto$ ... proportional to
+
+## Information update
+
+$X = x_0$ and/or $\theta$ can even be vectors:
+\[
+f_{\theta \mid X=x_0} (\theta \mid x_0) \propto f_{X \mid \theta} (x_0 \mid \theta)f_\theta(\theta)
+\]
+
+* our original (prior) information (belief) about $\theta$ was updated by observing $X=x_0$ into the posterior
+* this can be applied recursively:
+\[
+\begin{split}
+f_{\theta \mid X=x,Y=y}(\theta \mid x_0,y_0) &= f_{Y,X\mid \theta}(x_0,y_0 \mid \theta) f_\theta(\theta) \\&= f_{Y\mid \theta}(y_0 \mid \theta) \underbrace{f_{X\mid \theta}(x_0 \mid \theta) f_\theta(\theta)}_{\text{old posterior}},
+\end{split}
+\]
+
+\begin{exampleblock}{}
+\centering All available information about $\theta$ is summarized by the posterior.
+\end{exampleblock}
+
+## The Bayesian Approach
+
+* let us denote the data set $D$, its realization $d$, and $\theta$ the parameter(s).
+* the Bayesian model assumes
+  - the nature picks $\theta$ from the prior distribution $f_\theta$
+  - the nature generates data set $D=d$ from the likelihood $f_{D|\theta}$
+* the posterior
+\[
+f(\theta \mid D = d) \propto f(d \mid \theta) f(\theta).
+\]
+provides answers for all statistical tasks
+  - point estimation
+  - interval estimation
+  - prediction
+  - model selection
+  - hypothesis testing?
+
+## Point estimation
+
+**Goal**: a numerical value $\widehat{\theta}$ compatible with the data
+
+Frequentist approach:
+
+* MLE
+* method of moments
+* optimization (e.g. penalized least squares), etc.
+
+Bayesian approach:
+
+* MAP - Maximum A Posterior estimate
+  - the maximum of the posterior density
+  - close to frequentist MLE
+* posterior mean - the expected value of the posterior
+* posterior median
+* generally: minimizing the expected loss
+  - any loss function we can come up with
+  - the expectation is calculated under the posterior
+
+## Point Estimation
+
+```{r, echo=F, message=F, warning=F, fig.dim=c(4,3), fig.align='center'}
+library(mlbench)
+library(rstanarm)
+library(bayesplot)
+library(insight)
+library(bayestestR)
+library(ggplot2)
+data("BostonHousing")
+bost <- BostonHousing[,c("medv","age","dis","chas")]
+model_bayes<- stan_glm(medv~., data=bost, seed=111, refresh=0)
+post <- get_parameters(model_bayes)
+mcmc_dens(model_bayes, pars=c("age"))+
+  vline_at(median(post$age), col="red")+
+  vline_at(mean(post$age), col="yellow")+
+  vline_at(map_estimate(post$age), col="green") + 
+  geom_text(x=-0.12,y=3,label="MAP", color = "green") +
+  geom_text(x=-0.12,y=1,label="median", color = "red") +
+  geom_text(x=-0.12,y=2,label="mean", color = "yellow") 
+```
+
+## Interval Estimation
+
+**Goal**: a range of values $\widehat{\theta}$ compatible with the data
+
+Frequentist approach: a confidence interval $CI_{1-\alpha}$
+
+* connected to significance testing
+* cannot be interpreted in simple probabilistic terms
+
+Bayesian approach: a credible region $CR_{1-\alpha}$
+
+* a subset of $\Theta$ such that $P(\theta \in CR_{1-\alpha}) = 1-\alpha$
+  - probability calculated under the posterior
+* simple interpretation
+* many options (just as in the frequentist context), the narrowest possible is called the *highest posterior density interval*
+
+## Interval Estimation
+
+```{r, echo=F, message=F, warning=F, fig.dim=c(4,3), fig.align='center'}
+ppp <- mcmc_dens(model_bayes, pars=c("age"))
+ddd <- density(ppp$data$Value)
+# sum(ddd$y[ddd$y>5.22])/sum(ddd$y)
+ppp + 
+  hline_at(5.22, col="gray") + 
+  vline_at(ddd$x[min(which(ddd$y>5.22))]) +
+  vline_at(ddd$x[max(which(ddd$y>5.22))]) +
+  geom_text(x=mean(ddd$x),y=3,label="0.9", color = "black")
+```
+
+## Prediction
+
+**Goal**: predict new data points $D^\star$ based on the observed data $D=d$ and the model
+
+\bigskip
+
+Frequentist approach: varies
+
+\bigskip
+
+Bayesian approach: prediction = estimation
+
+* treat $D^\star$ as parameters but the likelihood satisfies $f_{D, D^\star\mid\theta} = f_{D\mid\theta} \cdot f_{D^\star\mid\theta}$, i.e. new and old data are independent given parameters
+\[
+\begin{split}
+f_{\theta,D,D^\star} &= f_{D \mid D^\star, \theta} \cdot f_{D^\star,\theta} = f_{D \mid \theta} \cdot f_{D^\star\mid\theta} \cdot f_\theta \\
+&\;\textcolor{gray}{= f_{\theta,D^\star \mid D} \cdot f_{D}}
+\end{split}
+\]
+* posterior: $f_{\theta,D^\star \mid D} \propto f_{D \mid \theta} \cdot f_{D^\star\mid\theta} \cdot f_\theta$ \hfill marginalize for $D^\star$
+
+## Model Selection
+
+**Goal**: decide which of a set $M$ of candidate models fits the data
+
+Frequentist approach: hypothesis testing
+
+Bayesian approach: model selection = estimation (again)
+
+* the data generation process is assumed to have additional level
+  - the nature generates a model $M \in \Pi$ based on a prior $f_M$
+  - then it generates $\theta$ conditionally on the model from $f_{\theta|M}$
+  - finally the data are generated conditionally on the model and parameters from $f_{D|M,\theta}$
+* calculate the posterior (now hierarchical):
+\[
+\begin{split}
+f_{D,\theta,M} &= f_{D\mid\theta,M} \cdot f_{\theta,M} = f_{D\mid\theta,M} \cdot f_{\theta\mid M} \cdot f_M \\
+&\;\textcolor{gray}{= f_{\theta,M \mid D} \cdot f_D}
+\end{split}
+\]
+posterior: $f_{\theta,M \mid D} \propto f_{D\mid\theta,M} \cdot f_{\theta\mid M} \cdot f_M$ \hfill ... marginalize for $M$ again
+
+## Example: Bayesian Ridge
+
+Consider a Gaussian linear model $Y = \mathbf{X} \beta + \epsilon$ with $\epsilon \sim \mathcal{N}(0,\sigma^2 I_{N \times N})$. Consider the following priors:
+
+* $\beta \sim \mathcal{N}(0,\tau^2 I_{p \times p})$ 
+  - $\tau^2$ is a hyperparameter - either fixed or with some hyperprior $f_{\tau^2}$
+* $f_{\sigma^2} \propto 1/\sigma^2$ (improper prior)
+
+Then the posterior for $\beta = (\beta^\top,\sigma^2,\tau^2)$ is given by
+\[
+\begin{split}
+f_{\theta \mid \mathbf{X},Y}(\beta,\sigma^2,\tau^2 \mid \mathbf{X}, Y) \propto \frac{1}{\sigma^n} e^{ -\frac{1}{2\sigma^2} (Y - \mathbf{X} \beta)^\top (Y - \mathbf{X} \beta)} \frac{1}{\tau^p} e^{ -\frac{1}{2\tau^2} \beta^\top \beta} \frac{1}{\sigma^2} f_{\tau^2}(\tau^2)
+\end{split}
+\]
+
+Interestingly, the log-posterior for $\beta$ is
+\[
+\begin{split}
+\log f_{\ldots}(\beta \mid \mathbf{X}, Y, \sigma^2, \tau^2) \propto -\frac{1}{2\sigma^2} (Y - \mathbf{X} \beta)^\top (Y - \mathbf{X} \beta) - \frac{1}{2\tau^2} \beta^\top \beta
+\end{split}
+\]
+so MAP here gives the ridge estimator for $\lambda = \sigma^2/\tau^2$
+
+## Computational Difficulty
+
+The Bayesian approach above is
+
+* conceptually straightforward and holistic, but
+* in practice requires computationally demanding integration
+  - the normalization constant
+  - marginalization
+  - calculating expectations
+
+Possible solutions:
+
+* analytic approximations to the posterior (e.g. Laplace)
+* Monte Carlo
+  - but the MC techniques we saw already are useful mostly in low-dimensional problems
+  - Markov Chain Monte Carlo (MCMC): explore the space in a dependent way, focusing on the important regions
+
+# Markov Chain Monte Carlo (MCMC)
+
+## MCMC
+
+**Goal**: calculate $\E g(X)$ for some function $g$
+
+\bigskip
+
+Monte Carlo (MC):
+
+* draw independently $X_1,\ldots,X_N \stackrel{\independent}{\sim} X$
+* approximate $\E g(X)$ empirically by $N^{-1} \sum_n g(X_n)$
+  - works due to LLN
+  
+\bigskip
+
+Markov Chain Monte Carlo (MCMC):
+
+* draw $X^{(1)},X^{(2)},\ldots,X^{(T)}$ as a Markov Chain with its *stationary distribution* equal to that of $X$
+* approximate $\E g(X)$ empirically by $T^{-1} \sum_t g(X_n)$
+  - works due to the *ergodic theorem* (LLN for Markov sequences)
+
+## Markov Chains
+
+**Definition** (informal): A sequence of random variables $\{X^{(t)}\}_{t \geq 0}$ with values in $\mathcal{X} \subset \R^p$ such that
+\[
+X^{(t+1)} \mid X^{(t)}, X^{(t-1)},\ldots,X^{(0)} \sim X^{(t+1)} \mid X^{(t)}
+\]
+is called a discrete-time *Markov chain*.
+
+* the conditional distribution $X^{(t+1)} \mid X^{(t)}$ is given by the *transition kernel* $k(x,y)$
+  - for $X^{(t)} = x$, the density for $X^{(t+1)}$ is $k_x(y) := k(x,y)$
+  - formally, $k$ has to meet some conditions on measurability and integrability
+  - a Markov chain is fully determined by the transition kernel!
+* a distribution $f$ is called the stationary distribution of a Markov chain associated with a transition kernel $k$ if
+\[
+\int_\mathcal{X} k(x,y) f(x) d x = f(y).
+\]
+
+## Detailed Balance
+
+**Claim**: If the following *detailed balance condition* holds
+\[
+k(x,y) f(x) = k(y,x) f(y)
+\]
+for a distribution $f$ and a transition kernel $k$, then $f$ is the stationary distribution of the Markov chain associated with $k$.
+
+* $k$ specifies the amount of flow between the points in the domain $\mathcal{X}$
+* detailed balance: the forward flow $x \leadsto y$ is equal to the backward flow $y \leadsto x$
+* let $f_t$ denote the marginal distribution of $X^{(t)}$
+  - $f_0$ is the initial distribution
+  - the update $f_t \leadsto f_{t+1}$ is governed by $k$
+  - no update $\Leftrightarrow$ $f_t$ is the stationary distribution $f$
+  - if $f_0 = f$, there will never be an update ... $f_t = f$ for all $t$
+  - detailed balance: $f_t \to f$ for $t \to \infty$ regardless of $f_0$
+
+## MCMC
+
+**Goal**: construct a chain with a pre-specified stationary distribution $f$, typically $f_{\theta\mid D=d}$
+
+* **Q**: how to actually do this? (next slide)
+* chain = function that generates $X^{(t-1)}$ depending on $X$
+  - the transition kernel $k$ is in the background
+
+MCMC is more widely applicable than MC, but what about *mixing*?
+
+* we initialize our chain from $f_0 \neq f$
+  - because if we could draw from $f$, we would be doing MC instead
+* after a *while* $f_t \approx f$ so we have our first draw $X^{(t)} \stackrel{\cdot}{\sim} f$
+  - discard $X^{(0)},\ldots,X^{(t-1)}$ and continue the chain (now stationary)
+  - **Q**: but what is a *while*? (hard to tell...)
+
+## Metropolis-Hastings
+
+**Idea**: start from a proposal chain with a wrong $f$ (e.g. a random walk, which has no $f$) and tweak it to the target $f$.
+
+* detailed balance requires the right amount of flow between all $x,y \in \mathcal{X}$
+* if there is too much flow $x \leadsto y$, re-map some part of it as $x \leadsto x$
+
+Metropolis-Hastings (MH) algorithm:
+
+* **Input**: a proposal chain $\{U^{(t)}\}$ with kernel $k$, the target $f$
+* **for** $t=1,2,\ldots$
+    - set $X^{(t)} := U^{(t)}$ with probability
+    \[
+    \alpha(X^{(t-1)},U^{(t)}) = \min\left(1,\frac{f(U^{(t)}) k(U^{(t)},X^{(t-1)})}{f(X^{(t-1)})k(X^{(t-1)},U^{(t)})}\right)
+    \]
+    - otherwise set $X^{(t)} := X^{(t-1)}$
+
+(if the proposal is symmetric, $k$ vanishes from the formula above)
+
+## MH with a Symmetric Proposal
+
+Let $U^{(0)} = \epsilon_0$ and $U^{(t+1)} = X^{(t)} + \epsilon_t$, $t \geq 1$, where $\epsilon_0,\epsilon_1,\ldots$ drawn independently from a symmetric density, leading to $k(x,y) = g(y-x)$.
+
+Verifying detailed balance is easy in this case:
+
+* detailed balance: $k(x,u) f(x) = k(u,x) f(u)$ for $x \stackrel{?}{\leadsto} u$
+* $k(x,u)$ is given implicitly as the mixture of
+  - moving away $x \leadsto u$ with probability $\alpha(x,u) = \min\big(1,f(u)/f(x)\big)$
+     - $u$ is drawn from $\varphi_x(u)$ a symmetric density around $x$
+     - equal to $\varphi_x(u) \alpha(x,u)$
+  - staying at $x$ with probability $1-\alpha(x,u)$
+    - this is symmetric w.r.t. time flow, so we do not have to worry about it
+* detailed balance: $\cancel{\varphi_x(u)} \alpha(x,u) f(x) = \cancel{\varphi_u(x)}\alpha(u,x) f(u)$
+* this is trivial since for $f(x) \neq f(u)$ it is
+  - either $\alpha(u,x) = 1$ and $\alpha(x,u) = f(u)/f(x)$ leading to
+  \[
+  \frac{f(u)}{f(x)} f(x) = f(u).
+  \]
+  - or the other way around
+
+## MH Remarks
+
+* $f$ is a posterior, evaluations needed *up to normalization*
+* MH similar in flavor to rejection sampling (RS) in MC
+  - but RS needs a majorizing proposal $g$ to decide sample vs. reject
+  - MCMC instead moves vs. stays $\Rightarrow$ no majorization needed
+* when sampling from a continuous $f$, repeated values have probability 0
+  - yet MH produces repeated values quite commonly
+
+**Def.**: acceptance rate for MH is the average acceptance probability
+\[
+\bar{\alpha} = \lim_{T \to \infty} \frac{1}{T} \sum_{t=1}^T \alpha(X^{(t-1)},U^{(t)})
+\]
+
+* if $\bar{\alpha}$ too large, we are probably not exploring the space, mostly staying close with our proposals to where we already were
+* if $\bar{\alpha}$ too small, we have a lot of repeated values in our sample and hence the effective sample size is small even for large $T$
+* 10-50% tends to be a good rate in practice
+
+## Example
+
+Consider the MH algorithm with a Gaussian random walk proposal to sample from a Gaussian mixture model
+\[
+f_{\mu_1,\mu_2,\sigma_1^2,\sigma_2^2,\tau}(x) = \tau \varphi_{\mu_1,\sigma_1^2}(x) + (1-\tau) \varphi_{\mu_2,\sigma_2^2}(x)
+\]
+with $\mu_1 = 1, \mu_2 = 5, \sigma_1=\sigma_2=1$ and $\tau=0.7$.
+
+```{R,echo=F, out.width='40%', fig.align='center'}
+mu1 <-0
+mu2 <- 5
+sigma1 <- sigma2 <- 1
+tau <- 0.7
+fmine <- function(x){
+  return(tau*dnorm(x,mu1,sigma1) + (1-tau)*dnorm(x,mu2,sigma2))
+}
+mhmine <- function(TT,sigma,burnin=1e3){
+  set.seed(123)
+  X <- rep(0,TT+burnin)
+  U_old <- rnorm(1,0,sigma)
+  X[1] <- rnorm(1,0,sigma)
+  accept <- 0
+  for(t in 2:(TT+burnin)){
+    if(t < burnin) accept <- 0
+    (U_new <- X[t-1] + rnorm(1,0,sigma))
+    alpha <- fmine(U_new)/fmine(X[t-1])
+    if(is.na(alpha)) alpha <- 0
+    R <- runif(1)
+    if(R < alpha){
+      X[t] <- U_new
+      accept <- accept + 1
+    }else{
+      X[t] <- X[t-1]
+    }
+    U_old <- U_new
+  }
+  # print(accept/TT)
+  return(X[(burnin+1):(burnin+TT)])
+  # return(X)
+}
+x <-(1:1000/1001-0.35)*15
+op <- par(ps=25)
+plot(x,fmine(x),type="l",main="Target density: mixture of two Gaussians")
+```
+
+* Since we require the proposal to be symmetric
+  - the mean of the proposal needs to be zero: $\mu=0$
+  - only $\sigma^2$ of the proposal has to be chosen
+  
+## Example
+
+```{R,echo=F, fig.show="hold", out.width='30%'}
+op <- par(ps=20)
+X <- mhmine(1e4,0.1) # 97 % acceptance rate
+plot(X,type="l",main=expression(paste("Sampled chain for ",sigma,"=0.1 leads to ",bar(alpha),"=0.97")),cex.main=1.5,xlab="t",ylab="values")
+plot(density(X),cex.main=1.5,main="KDE based on the sampled chain")
+plot(density(X[1:8000]),cex.main=1.5,main="KDE with only observations 1-8000 used")
+```
+
+```{R,echo=F, fig.show="hold", out.width='30%'}
+op <- par(ps=20)
+X <- mhmine(1e4,80) # 3 % acceptance rate
+plot(X,type="l",main=expression(paste("Sampled chain for ",sigma,"=80 leads to ",bar(alpha),"=0.03")),cex.main=1.5,xlab="t",ylab="values")
+plot(density(X),main="KDE based on the sampled chain")
+```
+
+```{R,echo=F, fig.show="hold", out.width='30%'}
+op <- par(ps=20)
+X <- mhmine(1e4,3) # 50 % acceptance rate
+plot(X,type="l",main=expression(paste("Sampled chain for ",sigma,"=3 leads to ",bar(alpha),"=0.5")),cex.main=1.5,xlab="t",ylab="values")
+plot(density(X),main="KDE based on the sampled chain")
+```
+
+## Assignment 8: problem setting
+
+Since black carbon (BC) is a pollutant known for its adverse health effects,
+it is of interest to monitor BC mass concentration in urban areas.
+While stationary measurement devices are able to precisely 
+record BC concentrations (random variable $X$), 
+simpler mobile devices provide more flexibility -- at the cost of
+some measurement noise $\varepsilon$.
+For a mobile measurement, only $Y = X + \varepsilon$ is observed, where we may assume $\varepsilon \sim N(0, \sigma^2)$ with known standard deviation $\sigma = 0.6\, \mu g m^{-3}$ based on lab experiments.
+
+To obtain a detailed overview over the BC concentrations in Lausanne,
+the aim is to add mobile measurements to those of available stationary devices. We want to predict $X$ given a noisy observation $Y=y$ using a
+Bayesian approach, with stationary measurements motivating a priori a Weibull distribution for $X$ with shape parameter $2$ and scale parameter $1.2$ (median $\approx 1 \, \mu g m^3$).
+
+## Assignment 8: tasks [5%]
+
+- Implement a Metropolis-Hastings-Algorithm for obtaining MCMC samples of $X \mid Y=y$ using $N(y, 0.6)$ as *fixed proposal distribution for all iterations* (note that this is an asymmetric proposal from the MH perspective!).
+
+- Run your algorithm for $y = 0.5$, $y = 1$ and $y = 2$ for illustration. 
+  In each run, draw $10000$ samples after a burn-in of $1000$ 
+  (less if it takes too long).
+  
+- In this specific scenario, the posterior is in fact analytically available 
+  with the R code for the density function provided on the next slide.
+  Graphically compare the empirical distributions of your MCMC samples with
+  the true posterior densities and the proposal densities for the three considered values of $y$.
+
+*Hint:* It might be wise to compute $\log(\alpha)$ first in dependence on $\log$-densities to avoid numerical issues.
+
+## Assignment 8: true posterior density
+
+```{r eval=FALSE, echo=TRUE, size=6}
+dposterior <- function(x, y, scale = 1.2, sd = .6) {
+  # x: evaluation points of the density
+  # y: observation Y=y (length 1),
+  # scale: scale parameter of Weibull prior (shape=2 fixed)
+  # sd: standard deviation of Gaussian error (mean=0 fixed)
+  a <- 1/2*1/sd^2; c <- 1/scale^2
+  erf <- function(x) 2*pnorm(x*sqrt(2)) - 1
+  k <- ifelse(x >= 0, x * exp( -a * (x-y)^2 - c*x^2 ), 0)
+  n <- exp(-a*(y^2)) *
+    (sqrt(pi) * a * y * exp(a^2*y^2 / (a+c)) * 
+       (erf(a*y/sqrt(a+c)) + 1) + 
+       sqrt(a + c) ) / (2* (a+c)^(3/2))
+  k/n
+}
+```
+
+
+
+
+
+
+
+
+
+
