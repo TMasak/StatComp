@@ -55,7 +55,7 @@ f_{\theta \mid X=x_0} (\theta \mid x_0) \propto f_{X \mid \theta} (x_0 \mid \the
 \]
 
 * our original (prior) information (belief) about $\theta$ was updated by observing $X=x_0$ into the posterior
-* this can be applied recursively:
+* this can be applied recursively (when a new $Y$ independent of the $X$ arrives):
 \[
 \begin{split}
 f_{\theta \mid X=x,Y=y}(\theta \mid x_0,y_0) &= f_{Y,X\mid \theta}(x_0,y_0 \mid \theta) f_\theta(\theta) \\&= f_{Y\mid \theta}(y_0 \mid \theta) \underbrace{f_{X\mid \theta}(x_0 \mid \theta) f_\theta(\theta)}_{\text{old posterior}},
