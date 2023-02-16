@@ -11,6 +11,9 @@ knitr::opts_chunk$set(echo = TRUE)
 
 Written in 2022 on Windows 10 running R version 4.0.4 and RStudio version 1.4.1106.
 
+
+**Please read the full guide if something does not work: it is very likely that the answer to your problem lies just a few lines after wherever you stopped reading**
+
 # Installing R and RStudio
 
 Go to [r-project.org](r-project.org) and download R. You have to choose a mirror, funnily Switzerland keeps giving me a hard time, so I opt for London. Install from the .exe file, choose English as the default language in the process.
@@ -28,25 +31,43 @@ installation process. If you are not sure how useful Git will be to you, it is a
 
 # Creating a GitHub account
 
-Firstly, check whether you already have an SSH key by running
-```{r, eval=F}
-file.exists("~/.ssh/id_rsa.pub")
-```
-in RStudio console.
+## Sign in 
 
-If that returns FALSE, go to Tools -> Global Options -> Git/SVN. (Maybe there already is an SSH key address, just in a different location, so try running `file.exists` with the correct location, if you see one. If you don't see any SSH key location...) Make sure
-the Git executable is available. Click "Create RSA Key" and click "Create" again.
-If you get "Access Denied" error, restart RStudio, this time as as an administrator.
-Close the pop-up, click "Apply". Still in the Git/SVN tab in Global Options, click
-"View public key". A pop-up with a long string will appear. Keep this open.
-
-Secondly, go to [github.org](github.org) and sign up. After providing your e-mail, choosing
+Go to [github.org](github.org) and sign up. After providing your e-mail, choosing
 a password and your GitHub name, and verifying you e-mail, choose that you will be
 working with 2-5 people and that you are a student. Skip the next option, and
 then just choose a free account.
 
 Now you are on GitHub and your account is empty (there is no repo yet). That is
 alright, keep the tab open, we will return to it in a bit.
+
+## SSH keys
+
+In order to interact with the git repository, we need to link a SSH key that will identify you (see it as a complicated password that you won't have to type). In the past it was possible to not 
+use a SSH key but github does not allow it anymore.
+
+We present 2 options to create/add a SSH key to your github account. If it does not work out of the box, please refer to [this link]( https://docs.github.com/en/authentication/connecting-to-github-with-ssh/generating-a-new-ssh-key-and-adding-it-to-the-ssh-agent) before panicking.
+
+**CLI**: 
+
+This will require you to use the terminal (recommended). You can access the terminal in RStudio by going to Tools → Terminal → Move focus to terminal. 
+
+Check [this github tutorial]( https://docs.github.com/en/authentication/connecting-to-github-with-ssh/generating-a-new-ssh-key-and-adding-it-to-the-ssh-agent) and follow the steps. Make sure to pick the correct option for your operating system (Mac, Windows, Linux). 
+
+**GUI with RStudio**
+
+Firstly, check whether you already have an SSH key by running
+```{r, eval=F}
+file.exists("~/.ssh/id_rsa.pub")
+```
+in RStudio console.
+
+
+If that returns FALSE, go to Tools -> Global Options -> Git/SVN. (Maybe there already is an SSH key address, just in a different location, so try running `file.exists` with the correct location, if you see one. If you don't see any SSH key location...) Make sure
+the Git executable is available. Click "Create RSA Key" and click "Create" again.
+If you get "Access Denied" error, restart RStudio, this time as as an administrator.
+Close the pop-up, click "Apply". Still in the Git/SVN tab in Global Options, click
+"View public key". A pop-up with a long string will appear. Keep this open.
 
 Go to https://github.com/settings/ssh and click "New SSH Key". Put e.g. "Rstudio"
 in the Title box, and copy the long string (from the tab opened in RStudio in the
@@ -109,6 +130,26 @@ But if that still doesn't work, go to the sub-section below.
 
 Now the content of the project folder should be up on GitHub. Return to the webpage,
 and click on your repo name in the top-left to see the repository.
+
+
+## In case of catastrophic errors
+
+If you have too many issues in these past two steps, try removing everything you created in these steps (github repository and RStudio project: don't worry you will be able to recreate them). Then 
+
+  1. Create a private repository, with nothing in it (in the `Initialize this repository`, let everything not ticked or set as `None`)
+  2. Follow the `…or create a new repository on the command line`. You first need to open the terminal in the directory where you want to save your project (e.g., `cd ~/Desktop/`), and then copy-paste the instructions. This should look like 
+    
+      ```
+          echo "# test" >> README.md
+          git init
+          git add README.md
+          git commit -m "first commit"
+          git branch -M main
+          git remote add origin git@github.com:dufourc1/test.git
+          git push -u origin main
+      ```
+  3. Create a new RStudio project with an existing directory (pick the directory that was created by the above actions. In this example it will be `~/Desktop/test/`. You can fetch the correct path by typing `pwd` in the terminal after the above steps).
+  4. add, commit and push. You're all set !
 
 ## Error when pushing from RStudio
 
