@@ -134,7 +134,7 @@ and click on your repo name in the top-left to see the repository.
 
 ## In case of catastrophic errors
 
-If you have too many issues in these past two steps, try removing everything you created in these steps (github repository and RStudio project: don't worry you will be able to recreate them). Then 
+If you have too many issues in these past two steps, try removing everything you created (directory and Rstudio project, please keep the ssh key) in these steps (github repository and RStudio project: don't worry you will be able to recreate them). Then 
 
   1. Create a private repository, with nothing in it (in the `Initialize this repository`, let everything not ticked or set as `None`)
   2. Follow the `…or create a new repository on the command line`. You first need to open the terminal in the directory where you want to save your project (e.g., `cd ~/Desktop/`), and then copy-paste the instructions. This should look like 
